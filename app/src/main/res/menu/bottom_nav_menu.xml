@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/quotation"
+        android:icon="@drawable/navigation_bar_quotation_icon_control"
+        android:title="Quotation" />
+
+    <item
+        android:id="@+id/invoice"
+        android:icon="@drawable/navigation_bar_invoice_icon_control"
+        android:title="Invoice" />
+
+</menu>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/swipe_layout"
+    tools:context=".document.QuotationFragment">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:background="@color/background_white"
+        android:layout_height="match_parent">
+
+        <include
+            layout="@layout/not_found_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true" />
+
+        <ExpandableListView
+            android:id="@+id/fragment_quotation_expandable_list_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="?actionBarSize"
+            android:groupIndicator="@android:color/transparent" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/create_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="35dp"
+            android:layout_marginBottom="80dp"
+            android:backgroundTint="@color/orange"
+            android:src="@drawable/add_icon" />
+
+    </RelativeLayout>
+
+</android.support.v4.widget.SwipeRefreshLayout>

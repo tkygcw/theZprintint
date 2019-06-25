@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/delete"
+        android:title="Delete" />
+
+    <item
+        android:id="@+id/print"
+        android:icon="@drawable/navigation_bar_invoice_icon_control"
+        android:title="Print PDF" />
+
+    <item
+        android:id="@+id/convert"
+        android:icon="@drawable/navigation_bar_invoice_icon_control"
+        android:title="Convert To Invoice" />
+
+    <item
+        android:id="@+id/complete"
+        android:icon="@drawable/navigation_bar_invoice_icon_control"
+        android:title="Complete" />
+
+</menu>

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white"
+    android:id="@+id/activity_login_parent_layout"
+    tools:context=".registration.LoginActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.2"
+        android:gravity="center">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/thezlogo"/>
+
+    </RelativeLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_weight="0.5"
+        android:scrollbars="none"
+        android:fillViewport="true"
+        android:layout_height="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:padding="15dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:background="@drawable/activity_login_custom_edit_text"
+                android:layout_marginTop="15dp"
+                android:elevation="5dp"
+                android:layout_height="?actionBarSize">
+
+                <EditText
+                    android:id="@+id/activity_login_username"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="3"
+                    android:background="@drawable/activity_login_custom_edit_text"
+                    android:hint="Username"
+                    android:inputType="textEmailAddress"
+                    android:maxLines="1"
+                    android:padding="10dp"
+                    android:textColor="@color/grey"
+                    android:textColorHint="#767676" />
+
+                <ImageView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:padding="17dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    android:id="@+id/activity_login_cancel_username"
+                    android:layout_weight="1"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:background="@drawable/activity_login_custom_edit_text"
+                android:layout_marginTop="15dp"
+                android:elevation="5dp"
+                android:layout_height="?actionBarSize">
+
+                <EditText
+                    android:layout_width="0dp"
+                    android:layout_weight="3"
+                    android:layout_height="match_parent"
+                    android:hint="Password"
+                    android:textColorHint="#767676"
+                    android:inputType="textPassword"
+                    android:id="@+id/activity_login_password"
+                    android:padding="10dp"
+                    android:maxLines="1"
+                    android:background="@drawable/activity_login_custom_edit_text"
+                    android:textColor="@color/grey" />
+
+                <ImageView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:padding="17dp"
+                    android:id="@+id/activity_login_show_password"
+                    android:src="@drawable/activity_login_show_icon"
+                    android:layout_weight="1"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/grey"
+                android:padding="5dp"
+                android:id="@+id/activity_login_forgot_password"
+                android:fontFamily="@string/font_family_condensed"
+                android:text="Forgot Password"/>
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="?actionBarSize"
+                android:background="@drawable/activity_login_custom_button"
+                android:text="Sign In"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:elevation="10dp"
+                android:id="@+id/activity_login_sign_in"
+                android:onClick="checking"
+                android:fontFamily="@string/font_family_condensed"
+                android:layout_marginTop="?actionBarSize"/>
+
+
+            <ProgressBar
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/login_activity_progress_bar"
+                android:indeterminateBehavior="repeat"
+                android:visibility="gone"
+                android:indeterminateTintMode="src_in"
+                android:indeterminateTint="@color/red" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <TextView
+        android:id="@+id/activity_login_version_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:padding="10dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:text="All Right Reserved By Thez Printing Design" />
+
+</LinearLayout>
