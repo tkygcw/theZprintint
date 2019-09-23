@@ -9,10 +9,17 @@ import java.util.ArrayList;
 public class ApiManager {
 
     private static String domain = "http://www.chafor.net/";
-    private static String prefix = "thez_printing/";
+//    private static String domain = "https://www.mahsing-ent.com/";
+    private static String prefix = "thezprinting/";
+
+    public String home = domain + prefix + "home/home.php";
     public String quotation = domain + prefix + "quotation/quotation.php";
     public String invoice = domain + prefix + "invoice/invoice.php";
     public String registration = domain + prefix + "registration/registration.php";
+    public String customer = domain + prefix + "customer/customer.php";
+    public String supplier = domain + prefix + "supplier/supplier.php";
+    public String product = domain + prefix + "product/product.php";
+    public String notification = domain + prefix + "notification/notification.php";
 
     public String setData(ArrayList<ApiDataObject> apiDataObjectArrayList) {
         StringBuilder apiDataPost = new StringBuilder();

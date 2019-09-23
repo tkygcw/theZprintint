@@ -1,39 +1,59 @@
 package com.jby.thezprinting;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.itextpdf.text.DocumentException;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
+import com.jby.thezprinting.dialog.CustomerDialog;
+import com.jby.thezprinting.dialog.SortingDialog;
+import com.jby.thezprinting.dialog.SupplierDialog;
 import com.jby.thezprinting.document.DetailActivity;
 import com.jby.thezprinting.document.InvoiceFragment;
 import com.jby.thezprinting.document.QuotationFragment;
-import com.jby.thezprinting.registration.LoginActivity;
+import com.jby.thezprinting.shareObject.ApiDataObject;
+import com.jby.thezprinting.shareObject.ApiManager;
+import com.jby.thezprinting.shareObject.AsyncTaskManager;
 import com.jby.thezprinting.shareObject.NetworkConnection;
 import com.jby.thezprinting.sharePreference.SharedPreferenceManager;
 
-import java.io.FileNotFoundException;
-import java.util.Objects;
+import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static com.jby.thezprinting.shareObject.CustomToast.CustomToast;
 import static com.jby.thezprinting.shareObject.VariableUtils.REQUEST_UPDATE;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener, SortingDialog.SortingDialogCallBack {
     private Toolbar toolbar;
     BottomNavigationView navView;
     private FrameLayout frameLayout;
@@ -47,10 +67,8 @@ public class MainActivity extends AppCompatActivity {
     private QuotationFragment quotationFragment;
     private InvoiceFragment invoiceFragment;
     private int lastFragment = -1;
-    /*
-     * exit prupose
-     * */
-    private boolean exit = false;
+    private String query = "";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +91,15 @@ public class MainActivity extends AppCompatActivity {
         navView.setSelectedItemId(R.id.quotation);
         navView.setItemIconTintList(null);
         setupActionBar("Quotation");
+        /*
+         * if get data from notification
+         * */
+        if (getIntent().getExtras() != null) {
+            String type = getIntent().getExtras().getString("channel_id");
+            if (type != null) {
+                navView.setSelectedItemId(type.equals("2") ? R.id.quotation : R.id.invoice);
+            }
+        }
     }
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -114,13 +141,13 @@ public class MainActivity extends AppCompatActivity {
                 FragmentManager fragmentManager = getSupportFragmentManager();
                 fragmentManager.beginTransaction().setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out).replace(R.id.frameLayout, fragment).commit();
                 /*
-                * register fragment
-                * */
-                if (fragmentClass == QuotationFragment.class) quotationFragment = (QuotationFragment) fragment;
+                 * register fragment
+                 * */
+                if (fragmentClass == QuotationFragment.class)
+                    quotationFragment = (QuotationFragment) fragment;
                 else invoiceFragment = (InvoiceFragment) fragment;
 
-            }
-            else Toast.makeText(this, "No fragment found", Toast.LENGTH_SHORT).show();
+            } else Toast.makeText(this, "No fragment found", Toast.LENGTH_SHORT).show();
         } else showSnackBar("No Internet Connection!");
     }
 
@@ -153,18 +180,24 @@ public class MainActivity extends AppCompatActivity {
     private void setupActionBar(String title) {
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(title);
-
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onBackPressed();
+            }
+        });
     }
 
-    public void openDetailActivity(Bundle bundle){
+    public void openDetailActivity(Bundle bundle) {
         startActivityForResult(new Intent(this, DetailActivity.class).putExtras(bundle), REQUEST_UPDATE);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == REQUEST_UPDATE)
-        {
+        if (resultCode == REQUEST_UPDATE) {
             if (fragmentClass == QuotationFragment.class) quotationFragment.onRefresh();
             else invoiceFragment.onRefresh();
         }
@@ -173,69 +206,104 @@ public class MainActivity extends AppCompatActivity {
     /*----------------------------------------------on back press------------------------------------------------------------------*/
 
     @Override
-    public void onBackPressed() {
-        exit();
-    }
-
-    public void exit() {
-        if (exit) {
-            moveTaskToBack(true);
-            finish();
-        } else {
-            Toast.makeText(this, "Press Back again to Exit.", Toast.LENGTH_SHORT).show();
-            exit = true;
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    exit = false;
-                }
-            }, 3 * 1000);
-        }
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_activity_action_menu, menu);
+        /*
+         * search purpose
+         * */
+        MenuItem searchId = menu.findItem(R.id.search);
+        SearchView searchView = (SearchView) searchId.getActionView();
+        EditText editText = searchView.findViewById(android.support.v7.appcompat.R.id.search_src_text);
+        editText.setTextColor(Color.WHITE);
+        searchView.setOnQueryTextListener(this);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.log_out:
-                logOutRequest();
+            case R.id.sorting:
+                openSortingDialog();
+                return true;
+            case R.id.customer:
+                openCustomerDialog();
+                return true;
+            case R.id.supplier:
+                openSupplierDialog();
                 return true;
             default:
                 return super.onContextItemSelected(item);
         }
     }
 
-    public void logOutRequest() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Warning");
-        builder.setMessage("Are you sure that you want to sign out?");
-        builder.setCancelable(true);
-
-        builder.setPositiveButton(
-                "Sign Out",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        SharedPreferenceManager.setUserId(getApplicationContext(), "default");
-                        startActivity(new Intent(getApplicationContext(), LoginActivity.class));
-                        finish();
-                        dialog.dismiss();
-                    }
-                });
-
-        builder.setNegativeButton(
-                "Cancel",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        dialog.dismiss();
-                    }
-                });
-        AlertDialog alert = builder.create();
-        alert.show();
+    /*
+     * Search purpose
+     * */
+    @Override
+    public boolean onQueryTextSubmit(String s) {
+        return false;
     }
 
+    @Override
+    public boolean onQueryTextChange(final String s) {
+        showProgressBar(true);
+        query = s;
+        if (fragmentClass == QuotationFragment.class) {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    quotationFragment.fetchParentItem(s);
+                }
+            }, 300);
+        } else {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    invoiceFragment.fetchParentItem(s);
+                }
+            }, 300);
+        }
+        return true;
+    }
+
+    private void openCustomerDialog() {
+        Bundle bundle = new Bundle();
+        bundle.putBoolean("isMainActivity", true);
+
+        DialogFragment dialogFragment = new CustomerDialog();
+        dialogFragment.setArguments(bundle);
+        dialogFragment.show(getSupportFragmentManager(), "");
+    }
+
+    private void openSupplierDialog() {
+        Bundle bundle = new Bundle();
+        bundle.putBoolean("isMainActivity", true);
+
+        DialogFragment dialogFragment = new SupplierDialog();
+        dialogFragment.setArguments(bundle);
+        dialogFragment.show(getSupportFragmentManager(), "");
+    }
+
+    /*------------------------------------------------sorting purpose------------------------------------------------------------------*/
+    private void openSortingDialog() {
+        Bundle bundle = new Bundle();
+        bundle.putString("date_start", fragmentClass == QuotationFragment.class ? quotationFragment.startDate : invoiceFragment.startDate);
+        bundle.putString("date_end", fragmentClass == QuotationFragment.class ? quotationFragment.endDate : invoiceFragment.endDate);
+
+        DialogFragment dialogFragment = new SortingDialog();
+        dialogFragment.setArguments(bundle);
+        dialogFragment.show(getSupportFragmentManager(), "");
+    }
+
+    @Override
+    public void applySorting(String dateStart, String dateEnd) {
+        if (fragmentClass == QuotationFragment.class) {
+            quotationFragment.startDate = dateStart;
+            quotationFragment.endDate = dateEnd;
+            quotationFragment.fetchParentItem(query);
+        } else {
+            invoiceFragment.startDate = dateStart;
+            invoiceFragment.endDate = dateEnd;
+        }
+    }
 }

@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/transparent_black"
+    android:orientation="vertical">
+
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="20dp"
+        android:background="@color/white"
+        android:orientation="vertical"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="10dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:orientation="vertical">
+
+            <android.support.v7.widget.SearchView
+                android:id="@+id/supplier_dialog_search"
+                android:layout_width="match_parent"
+                android:layout_height="?actionBarSize" />
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="none"
+                android:fillViewport="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        android:id="@+id/display_supplier_layout"
+                        android:orientation="vertical">
+
+
+                        <TextView
+                            android:id="@+id/supplier_dialog_label_recent_choose"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="Recent Choose"
+                            android:textColor="@color/grey"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <com.jby.thezprinting.others.ExpandableHeightListView
+                            android:id="@+id/supplier_dialog_favourite_supplier_list"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:divider="@color/line_black"
+                            android:dividerHeight="1dp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="All Supplier"
+                            android:textColor="@color/grey"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/add_new_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="20dp"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/custom_orange_button"
+                            android:elevation="10dp"
+                            android:stateListAnimator="@null"
+                            android:text="Add New Supplier"
+                            android:textColor="@color/white" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:id="@+id/supplier_not_found_layout"
+                            android:layout_height="200dp">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:padding="5dp"
+                                android:layout_gravity="center"
+                                android:text="No Customer is Found"
+                                android:gravity="center"
+                                android:textColor="@color/line_black"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                        </LinearLayout>
+
+
+                        <com.jby.thezprinting.others.ExpandableHeightListView
+                            android:id="@+id/supplier_dialog_supplier_list"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:divider="@color/line_black"
+                            android:dividerHeight="1dp" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/add_supplier_layout"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@string/font_family_condensed"
+                            android:padding="10dp"
+                            android:text="Name"
+                            android:textColor="@color/transparent_black"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/orange"
+                            android:minHeight="?actionBarSize"
+                            android:padding="10dp"
+                            android:inputType="text"
+                            android:id="@+id/supplier"
+                            android:gravity="start" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@string/font_family_condensed"
+                            android:padding="10dp"
+                            android:text="Address"
+                            android:textColor="@color/transparent_black"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="?actionBarSize"
+                            android:backgroundTint="@color/orange"
+                            android:padding="10dp"
+                            android:hint="Optional"
+                            android:id="@+id/address" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@string/font_family_condensed"
+                            android:padding="10dp"
+                            android:text="Contact Information"
+                            android:textColor="@color/transparent_black"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="?actionBarSize"
+                            android:backgroundTint="@color/orange"
+                            android:padding="10dp"
+                            android:hint="Optional"
+                            android:imeOptions="actionSend"
+                            android:id="@+id/contact"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@string/font_family_condensed"
+                            android:padding="10dp"
+                            android:text="Email"
+                            android:textColor="@color/transparent_black"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="?actionBarSize"
+                            android:backgroundTint="@color/orange"
+                            android:padding="10dp"
+                            android:hint="Optional"
+                            android:imeOptions="actionSend"
+                            android:id="@+id/email"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@string/font_family_condensed"
+                            android:padding="10dp"
+                            android:text="Website"
+                            android:textColor="@color/transparent_black"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="?actionBarSize"
+                            android:backgroundTint="@color/orange"
+                            android:padding="10dp"
+                            android:hint="Optional"
+                            android:imeOptions="actionSend"
+                            android:id="@+id/website"/>
+
+                        <Button
+                            android:id="@+id/add_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="20dp"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/custom_orange_button"
+                            android:elevation="10dp"
+                            android:stateListAnimator="@null"
+                            android:text="Save Supplier"
+                            android:textColor="@color/white" />
+
+                        <Button
+                            android:id="@+id/back_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="20dp"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/custom_red_button"
+                            android:elevation="10dp"
+                            android:stateListAnimator="@null"
+                            android:text="Back"
+                            android:textColor="@color/white" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </ScrollView>
+
+        </LinearLayout>
+
+    </android.support.v7.widget.CardView>
+
+</LinearLayout>

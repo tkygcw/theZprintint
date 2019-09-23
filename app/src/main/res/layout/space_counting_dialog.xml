@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/transparent_black"
+    android:orientation="vertical">
+
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:background="@color/white"
+        android:orientation="vertical"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="10dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@string/font_family_condensed"
+                android:padding="10dp"
+                android:text="Print Options"
+                android:gravity="center"
+                android:textColor="@color/grey"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@string/font_family_condensed"
+                android:padding="10dp"
+                android:text="Spacing Control"
+                android:textColor="@color/transparent_black"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <android.support.v7.widget.AppCompatCheckBox
+                android:id="@+id/auto_spacing"
+                android:checked="true"
+                android:theme="@style/CustomCheckBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:paddingEnd="0dp"
+                android:text="Auto Spacing"/>
+
+
+            <EditText
+                android:id="@+id/custom_spacing"
+                android:visibility="gone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="?actionBarSize"
+                android:backgroundTint="@color/orange"
+                android:padding="10dp"
+                android:inputType="number"
+                android:text="0"
+                android:hint="Custom Spacing" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/artwork_layout"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@string/font_family_condensed"
+                    android:padding="10dp"
+                    android:text="Artwork"
+                    android:textColor="@color/transparent_black"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <android.support.v7.widget.AppCompatCheckBox
+                    android:id="@+id/artwork_provided"
+                    android:checked="true"
+                    android:theme="@style/CustomCheckBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="0dp"
+                    android:text="Provided By Client"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/currency_layout"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@string/font_family_condensed"
+                    android:padding="10dp"
+                    android:text="Currency"
+                    android:textColor="@color/transparent_black"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/currency"
+                    android:layout_width="match_parent"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="0dp"
+                    android:layout_height="?actionBarSize"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/rate_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@string/font_family_condensed"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="0dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:text="Rate"
+                        android:textColor="@color/transparent_black"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:fontFamily="@string/font_family_condensed"
+                        android:text=" *(MYR => SGD)"
+                        android:textColor="@color/red"
+                        android:gravity="center|start"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+
+                <EditText
+                    android:id="@+id/rate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="?actionBarSize"
+                    android:backgroundTint="@color/orange"
+                    android:padding="10dp"
+                    android:inputType="numberDecimal"
+                    android:hint="MYD/Rate = SGD" />
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/print_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/custom_orange_button"
+                android:elevation="10dp"
+                android:stateListAnimator="@null"
+                android:text="Proceed to Print"
+                android:textColor="@color/white" />
+
+        </LinearLayout>
+
+    </android.support.v7.widget.CardView>
+
+</LinearLayout>

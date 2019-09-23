@@ -68,7 +68,7 @@ public class DocumentDetailAdapter extends BaseAdapter {
     /*-------------------------------------------------------search purpose--------------------------------------------------------------*/
 
     private static class ViewHolder {
-        private TextView item, quantity, price, sub_total;
+        private TextView item, quantity, price, sub_total, edit;
 
         ViewHolder(View view) {
             item = view.findViewById(R.id.item);

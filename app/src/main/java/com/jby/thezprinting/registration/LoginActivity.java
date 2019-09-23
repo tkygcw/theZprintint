@@ -19,7 +19,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.jby.thezprinting.MainActivity;
+import com.facebook.stetho.Stetho;
+import com.jby.thezprinting.HomeActivity;
 import com.jby.thezprinting.R;
 import com.jby.thezprinting.shareObject.ApiDataObject;
 import com.jby.thezprinting.shareObject.ApiManager;
@@ -58,6 +59,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void objectInitialize() {
+
         loginActivityUsername = (EditText) findViewById(R.id.activity_login_username);
         loginActivityPassword = (EditText) findViewById(R.id.activity_login_password);
 
@@ -205,7 +207,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             String userID = jsonObject.getString("user_id");
             SharedPreferenceManager.setUserId(this, userID);
             //intent
-            startActivity(new Intent(this, MainActivity.class));
+            startActivity(new Intent(this, HomeActivity.class));
             finish();
 
         } catch (JSONException e) {
@@ -214,8 +216,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void isLogin() {
+        Stetho.initializeWithDefaults(this);
         if (!SharedPreferenceManager.getUserId(this).equals("default")) {
-            startActivity(new Intent(this, MainActivity.class));
+            startActivity(new Intent(this, HomeActivity.class));
             finish();
         }
     }

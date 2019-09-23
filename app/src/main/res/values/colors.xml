@@ -20,11 +20,14 @@
     <color name="green">#2DC100</color>
     <color name="line_black">#26000000</color>
     <color name="tiffany_blue">#00CB99</color>
-    <color name="action_bar_color">#35363B</color>
     <color name="edit_text_background">#E6E6E6</color>
     <color name="selected_color">#E2E4FF</color>
     <color name="purple">#A12EB7</color>
     <color name="sky_blue">#04B9D2</color>
     <color name="peach">#C78E7A</color>
     <color name="orange">#F6931E</color>
+    <color name="less_transparent_orange">#BEF6931E</color>
+    <color name="more_transparent_orange">#80F6931E</color>
+    <color name="action_bar_color">#35363B</color>
+    <color name="less_transparent_action_bar_color">#E635363B</color>
 </resources>

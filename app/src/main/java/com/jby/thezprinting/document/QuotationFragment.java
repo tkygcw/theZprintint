@@ -13,7 +13,6 @@ import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.jby.thezprinting.MainActivity;
 import com.jby.thezprinting.R;
@@ -30,6 +29,8 @@ import org.json.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -51,13 +52,16 @@ public class QuotationFragment extends Fragment implements ExpandableListView.On
     private ExpandableListView expandableListView;
     private ArrayList<ExpandableParentObject> expandableParentObjectArrayList;
     private QuotationAdapter quotationAdapter;
-    private int groupPosition;
     /*
      * Async Task
      * */
     AsyncTaskManager asyncTaskManager;
     JSONObject jsonObjectLoginResponse;
     ArrayList<ApiDataObject> apiDataObjectArrayList;
+    /*
+    * sorting purpose
+    * */
+    public String startDate, endDate;
 
     private FloatingActionButton createButton;
 
@@ -93,6 +97,9 @@ public class QuotationFragment extends Fragment implements ExpandableListView.On
         expandableListView = rootView.findViewById(R.id.fragment_quotation_expandable_list_view);
         expandableParentObjectArrayList = new ArrayList<>();
         quotationAdapter = new QuotationAdapter(getActivity(), expandableParentObjectArrayList, "quotation");
+
+        startDate = getDate(true);
+        endDate = getDate(false);
     }
 
     private void objectSetting() {
@@ -104,7 +111,8 @@ public class QuotationFragment extends Fragment implements ExpandableListView.On
         expandableListView.setOnGroupClickListener(this);
         expandableListView.setOnScrollListener(this);
         setupNotFoundLayout();
-        fetchParentItem();
+        showProgressBar(true);
+        fetchParentItem("");
     }
 
     private void setupNotFoundLayout() {
@@ -115,24 +123,20 @@ public class QuotationFragment extends Fragment implements ExpandableListView.On
 
     @Override
     public boolean onGroupClick(ExpandableListView expandableListView, View view, int i, long l) {
-        groupPosition = i;
-        if (expandableListView.isGroupExpanded(i)) expandableListView.collapseGroup(i);
-        else {
-            //close view
-            closeOtherChildView(i);
-            expandableParentObjectArrayList.get(i).getDocumentObjectArrayList().clear();
-            fetchChildItem(i);
-        }
+        if (expandableListView.isGroupExpanded(i)) expandGroup(i);
         return true;
     }
 
 
-    private void fetchParentItem() {
+    public void fetchParentItem(final String query) {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 apiDataObjectArrayList = new ArrayList<>();
                 apiDataObjectArrayList.add(new ApiDataObject("read_parent", "1"));
+                apiDataObjectArrayList.add(new ApiDataObject("query", query));
+                apiDataObjectArrayList.add(new ApiDataObject("start_date", startDate));
+                apiDataObjectArrayList.add(new ApiDataObject("end_date", endDate));
 
                 asyncTaskManager = new AsyncTaskManager(
                         getActivity(),
@@ -150,12 +154,30 @@ public class QuotationFragment extends Fragment implements ExpandableListView.On
                         jsonObjectLoginResponse = asyncTaskManager.get(30000, TimeUnit.MILLISECONDS);
                         Log.d("haha", "quotation json: " + jsonObjectLoginResponse);
                         if (jsonObjectLoginResponse != null) {
-                            if (jsonObjectLoginResponse.getString("status").equals("1")) {
-                                JSONArray jsonArray = jsonObjectLoginResponse.getJSONArray("parent");
-                                for (int i = 0; i < jsonArray.length(); i++) {
-                                    expandableParentObjectArrayList.add(new ExpandableParentObject(jsonArray.getJSONObject(i).getString("date")));
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        reset();
+                                        if (jsonObjectLoginResponse.getString("status").equals("1")) {
+                                            JSONArray jsonArray = jsonObjectLoginResponse.getJSONArray("parent");
+                                            for (int i = 0; i < jsonArray.length(); i++) {
+                                                /*
+                                                 * parent item
+                                                 * */
+                                                expandableParentObjectArrayList.add(new ExpandableParentObject(jsonArray.getJSONObject(i).getString("date")));
+                                                /*
+                                                 * child item
+                                                 * */
+                                                expandableParentObjectArrayList.get(i).setDocumentObjectArrayList(separateDocument(jsonArray.getJSONObject(i).getString("quotation_detail")));
+                                                expandGroup(i);
+                                            }
+                                        }
+                                    } catch (JSONException | IndexOutOfBoundsException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
-                            }
+                            });
                         } else {
                             CustomToast(getActivity(), "Network Error!");
                         }
@@ -164,9 +186,6 @@ public class QuotationFragment extends Fragment implements ExpandableListView.On
                         e.printStackTrace();
                     } catch (ExecutionException e) {
                         CustomToast(getActivity(), "Execution Exception!");
-                        e.printStackTrace();
-                    } catch (JSONException e) {
-                        CustomToast(getActivity(), "JSON Exception!");
                         e.printStackTrace();
                     } catch (TimeoutException e) {
                         CustomToast(getActivity(), "Connection Time Out!");
@@ -174,121 +193,38 @@ public class QuotationFragment extends Fragment implements ExpandableListView.On
                     }
                 }
                 setVisibility();
-                preOpenChild();
-
             }
         }).start();
     }
 
-    private void preOpenChild() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (expandableParentObjectArrayList.size() > 0) fetchChildItem(0);
-            }
-        });
-    }
-
-
-    private void closeOtherChildView(int position) {
-        for (int i = 0; i < expandableParentObjectArrayList.size(); i++) {
-            if (i != position) expandableListView.collapseGroup(i);
-        }
-    }
-
-
-    /*------------------------------------child-------------------------------*/
-    private void fetchChildItem(final int position) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                apiDataObjectArrayList = new ArrayList<>();
-                apiDataObjectArrayList.add(new ApiDataObject("read_child", "1"));
-                apiDataObjectArrayList.add(new ApiDataObject("date", expandableParentObjectArrayList.get(position).getDate()));
-                Log.d("haha", "datee: " + expandableParentObjectArrayList.get(position).getDate());
-                asyncTaskManager = new AsyncTaskManager(
-                        getActivity(),
-                        new ApiManager().quotation,
-                        new ApiManager().getResultParameter(
-                                "",
-                                new ApiManager().setData(apiDataObjectArrayList),
-                                ""
-                        )
-                );
-                asyncTaskManager.execute();
-
-                if (!asyncTaskManager.isCancelled()) {
-
-                    try {
-                        jsonObjectLoginResponse = asyncTaskManager.get(30000, TimeUnit.MILLISECONDS);
-
-                        if (jsonObjectLoginResponse != null) {
-                            Log.d("jsonObject", "jsonObject: " + jsonObjectLoginResponse);
-                            if (jsonObjectLoginResponse.getString("status").equals("1")) {
-                                JSONArray jsonArray = jsonObjectLoginResponse.getJSONArray("child");
-                                setChildValue(jsonArray, position);
-                            } else {
-                                expandableParentObjectArrayList.remove(groupPosition);
-                                setVisibility();
-                            }
-                        } else {
-                            CustomToast(getActivity(), "Network Error!");
-                        }
-                    } catch (InterruptedException e) {
-                        CustomToast(getActivity(), "Interrupted Exception!");
-                        e.printStackTrace();
-                    } catch (ExecutionException e) {
-                        CustomToast(getActivity(), "Execution Exception!");
-                        e.printStackTrace();
-                    } catch (JSONException e) {
-                        CustomToast(getActivity(), "JSON Exception!");
-                        e.printStackTrace();
-                    } catch (TimeoutException e) {
-                        CustomToast(getActivity(), "Connection Time Out!");
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).start();
-    }
-
-    private void setChildValue(JSONArray jsonArray, final int position) {
+    private ArrayList<DocumentObject> separateDocument(String documents) {
+        ArrayList<DocumentObject> expandableChildObjectArrayList = new ArrayList<>();
         try {
-            for (int i = 0; i < jsonArray.length(); i++) {
-                try {
-                    expandableParentObjectArrayList.get(position).setDocumentObjectArrayList(setChildObject(jsonArray.getJSONObject(i)));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+            String[] document = documents.split(";");
+            for (String s : document) {
+                String[] productDetail = s.split("\\$");
+                expandableChildObjectArrayList.add(new DocumentObject(
+                        productDetail[0],
+                        productDetail[1],
+                        productDetail[2],
+                        productDetail[3],
+                        productDetail[5],
+                        productDetail[6],
+                        ""));
             }
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    expandableListView.expandGroup(position);
-                    expandableListView.setSelectedGroup(position);
-                    notifyDataSetChanged();
-                }
-            });
         } catch (NullPointerException e) {
+            CustomToast(getActivity(), "No Item Found!");
+        } catch (IndexOutOfBoundsException e) {
             e.printStackTrace();
+            CustomToast(getActivity(), "Something went wrong!");
         }
-
+        return expandableChildObjectArrayList;
     }
 
-    private DocumentObject setChildObject(JSONObject jsonObject) {
-        DocumentObject object = null;
-        try {
-            object = new DocumentObject(
-                    jsonObject.getString("quotation_id"),
-                    jsonObject.getString("created_at"),
-                    jsonObject.getString("target"),
-                    jsonObject.getString("status"),
-                    jsonObject.getString("username"));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return object;
+    private void expandGroup(final int position) {
+        expandableListView.expandGroup(position);
     }
+
 
     private void setVisibility() {
         getActivity().runOnUiThread(new Runnable() {
@@ -342,10 +278,9 @@ public class QuotationFragment extends Fragment implements ExpandableListView.On
 
     @Override
     public void onRefresh() {
-        groupPosition = 0;
         showProgressBar(true);
         expandableParentObjectArrayList.clear();
-        fetchParentItem();
+        fetchParentItem("");
         swipeRefreshLayout.setRefreshing(false);
     }
 
@@ -356,13 +291,27 @@ public class QuotationFragment extends Fragment implements ExpandableListView.On
 
     @Override
     public void onScroll(AbsListView absListView, int i, int i1, int i2) {
-        try{
+        try {
             if (swipeRefreshLayout.getChildAt(0) != null) {
                 swipeRefreshLayout.setEnabled(expandableListView.getFirstVisiblePosition() == 0 && expandableListView.getChildAt(0).getTop() == 0);
             }
-        }catch (NullPointerException e){
+        } catch (NullPointerException e) {
             e.printStackTrace();
         }
+    }
 
+    /*--------------------------------------------------------------search----------------------------------------------------------------------------*/
+    public void reset() {
+        expandableParentObjectArrayList.clear();
+        notifyDataSetChanged();
+    }
+
+    /*--------------------------------------------------------------date----------------------------------------------------------------------------*/
+    private String getDate(boolean from) {
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = (from ? calendar.getActualMinimum(Calendar.DATE) : calendar.get(Calendar.DAY_OF_MONTH));
+        return year + "-" + String.format(Locale.getDefault(), "%02d", (month + 1)) + "-" + String.format(Locale.getDefault(), "%02d", day);
     }
 }

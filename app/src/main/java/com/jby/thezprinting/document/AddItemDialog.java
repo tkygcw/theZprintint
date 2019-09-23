@@ -154,7 +154,7 @@ public class AddItemDialog extends DialogFragment implements View.OnClickListene
 
                 float subTotal = price * Float.valueOf(quantity);
 
-                addItemDialogCallBack.returnData(action, new DocumentObject("", item, String.format ("%.2f", price), quantity, String.format ("%.2f", subTotal), ""));
+                addItemDialogCallBack.returnData(action, new DocumentObject("", item, String.valueOf(price), quantity, String.format ("%.2f", subTotal)));
                 //reset after insert
                 reset();
             } catch (NumberFormatException e) {

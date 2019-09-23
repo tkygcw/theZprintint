@@ -11,6 +11,12 @@
         android:title="Print PDF" />
 
     <item
+        android:id="@+id/print_do"
+        android:icon="@drawable/navigation_bar_invoice_icon_control"
+        android:visible="true"
+        android:title="Print DO" />
+
+    <item
         android:id="@+id/convert"
         android:icon="@drawable/navigation_bar_invoice_icon_control"
         android:title="Convert To Invoice" />

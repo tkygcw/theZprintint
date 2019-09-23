@@ -46,8 +46,12 @@ public class QuotationAdapter extends BaseExpandableListAdapter {
         } else
             groupViewHolder = (GroupViewHolder) convertView.getTag();
 
-        final ExpandableParentObject object = getGroup(groupPosition);
-        groupViewHolder.date.setText(setDate(object.getDate()));
+        try {
+            final ExpandableParentObject object = getGroup(groupPosition);
+            groupViewHolder.date.setText(setDate(object.getDate()));
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
         return convertView;
     }
 
@@ -58,7 +62,12 @@ public class QuotationAdapter extends BaseExpandableListAdapter {
 
     @Override
     public ExpandableParentObject getGroup(int i) {
-        return expandableParentObjectArrayList.get(i);
+        try {
+            return expandableParentObjectArrayList.get(i);
+        } catch (IndexOutOfBoundsException e) {
+            e.printStackTrace();
+            return new ExpandableParentObject();
+        }
     }
 
     private static class GroupViewHolder {
@@ -92,12 +101,15 @@ public class QuotationAdapter extends BaseExpandableListAdapter {
             viewHolder = (ChildViewHolder) view.getTag();
 
         final DocumentObject object = getChild(groupPosition, childPosition);
-        viewHolder.id.setText(setQuotationPlaceHolder(object.getDocumentID()));
-        viewHolder.target.setText(object.getTarget());
-        viewHolder.date.setText(object.getDate());
-        viewHolder.price.setText(object.getPrice());
-        viewHolder.personInCharge.setText("In charge:" + object.getPersonInCharge());
-        setStatus(viewHolder.status, object.getStatus());
+        try{
+            viewHolder.id.setText(setQuotationPlaceHolder(object.getDocumentNo()));
+            viewHolder.target.setText(object.getTarget());
+            viewHolder.date.setText(object.getDate());
+            viewHolder.price.setText(object.getPrice());
+            viewHolder.personInCharge.setText("In charge:" + object.getPersonInCharge());
+            setStatus(viewHolder.status, object.getStatus());
+        }catch (NullPointerException e){
+        }
 
         return view;
     }
@@ -136,7 +148,12 @@ public class QuotationAdapter extends BaseExpandableListAdapter {
 
     @Override
     public DocumentObject getChild(int groupPosition, int childPosition) {
-        return expandableParentObjectArrayList.get(groupPosition).getDocumentObjectArrayList().get(childPosition);
+        try {
+            return expandableParentObjectArrayList.get(groupPosition).getDocumentObjectArrayList().get(childPosition);
+        } catch (IndexOutOfBoundsException e) {
+            return new DocumentObject();
+        }
+
     }
 
     @Override

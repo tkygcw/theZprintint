@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/swipe_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <include
+            layout="@layout/actionbar"
+            android:layout_width="match_parent"
+            android:layout_height="?actionBarSize" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <ScrollView
+                android:id="@+id/add_supplier_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="@dimen/activity_vertical_margin"
+                android:fillViewport="true"
+                android:scrollbars="none"
+                android:visibility="visible">
+
+
+                <!--add, update product layout-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@string/font_family_condensed"
+                        android:padding="10dp"
+                        android:text="Product"
+                        android:textColor="@color/transparent_black"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/product"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/orange"
+                        android:gravity="start"
+                        android:inputType="text"
+                        android:minHeight="?actionBarSize"
+                        android:padding="10dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@string/font_family_condensed"
+                                android:padding="10dp"
+                                android:text="Sell Price (RM)"
+                                android:textColor="@color/transparent_black"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+
+                            <EditText
+                                android:id="@+id/price"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:backgroundTint="@color/orange"
+                                android:gravity="start"
+                                android:hint="99.99"
+                                android:inputType="numberDecimal"
+                                android:minHeight="?actionBarSize"
+                                android:nextFocusDown="@+id/unit"
+                                android:nextFocusLeft="@+id/unit"
+                                android:nextFocusRight="@+id/unit"
+                                android:nextFocusUp="@+id/unit"
+                                android:padding="10dp" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@string/font_family_condensed"
+                                android:padding="10dp"
+                                android:text="Unit"
+                                android:textColor="@color/transparent_black"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+
+                            <EditText
+                                android:id="@+id/unit"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:backgroundTint="@color/orange"
+                                android:gravity="start"
+                                android:hint="per sq.ft"
+                                android:inputType="text"
+                                android:minHeight="?actionBarSize"
+                                android:padding="10dp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@string/font_family_condensed"
+                        android:padding="10dp"
+                        android:text="Category"
+                        android:textColor="@color/transparent_black"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/category"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/orange"
+                        android:gravity="start"
+                        android:hint="Card/ Sticker"
+                        android:inputType="text"
+                        android:minHeight="?actionBarSize"
+                        android:padding="10dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@string/font_family_condensed"
+                        android:padding="10dp"
+                        android:text="Supplier"
+                        android:textColor="@color/transparent_black"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/add_supplier_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:elevation="10dp"
+                        android:padding="5dp"
+                        android:background="@drawable/custom_grey_button"
+                        android:text="Add New Supplier"
+                        android:textSize="10sp"
+                        android:textColor="@color/white" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/label_supplier_price_list"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="2"
+                            android:ellipsize="end"
+                            android:fontFamily="sans-serif-condensed"
+                            android:gravity="start"
+                            android:text="Supplier"
+                            android:padding="10dp"
+                            android:textColor="@color/grey"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="0.5"
+                            android:ellipsize="end"
+                            android:fontFamily="sans-serif-condensed"
+                            android:gravity="center"
+                            android:text="We Buy"
+                            android:textColor="@color/grey"
+                            android:textSize="15sp"
+                            android:padding="10dp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                    <com.jby.thezprinting.others.ExpandableHeightListView
+                        android:id="@+id/supplier_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="none" />
+
+
+                    <Button
+                        android:id="@+id/save_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginTop="40dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/custom_orange_button"
+                        android:elevation="10dp"
+                        android:stateListAnimator="@null"
+                        android:text="Save Product"
+                        android:textColor="@color/white" />
+
+                    <Button
+                        android:id="@+id/back_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/custom_red_button"
+                        android:elevation="10dp"
+                        android:stateListAnimator="@null"
+                        android:text="Back"
+                        android:textColor="@color/white" />
+
+                </LinearLayout>
+
+            </ScrollView>
+
+            <LinearLayout
+                android:id="@+id/display_product_layout"
+                android:layout_width="match_parent"
+                android:visibility="gone"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <ExpandableListView
+                    android:id="@+id/product_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:groupIndicator="@android:color/transparent" />
+
+            </LinearLayout>
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/add_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginEnd="35dp"
+                android:layout_marginBottom="80dp"
+                android:backgroundTint="@color/orange"
+                android:src="@drawable/add_icon" />
+
+            <include
+                layout="@layout/not_found_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_centerInParent="true" />
+
+            <include
+                layout="@layout/progress_bar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_centerInParent="true" />
+
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</android.support.v4.widget.SwipeRefreshLayout>

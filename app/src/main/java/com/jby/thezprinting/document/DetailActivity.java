@@ -1,6 +1,7 @@
 package com.jby.thezprinting.document;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.DialogInterface;
@@ -13,11 +14,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.FileUriExposedException;
+import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.app.ShareCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -33,7 +34,6 @@ import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.DatePicker;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -50,11 +50,16 @@ import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.jby.thezprinting.R;
 import com.jby.thezprinting.adapter.DocumentDetailAdapter;
+import com.jby.thezprinting.dialog.CustomerDialog;
+import com.jby.thezprinting.dialog.DepositDialog;
+import com.jby.thezprinting.dialog.PrintOptionDialog;
+import com.jby.thezprinting.object.CustomerObject;
 import com.jby.thezprinting.object.DocumentObject;
 import com.jby.thezprinting.shareObject.ApiDataObject;
 import com.jby.thezprinting.shareObject.ApiManager;
@@ -70,6 +75,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -82,6 +88,8 @@ import java.util.concurrent.TimeoutException;
 import com.jby.thezprinting.others.ExpandableHeightListView;
 import com.jby.thezprinting.sharePreference.SharedPreferenceManager;
 
+import cn.pedant.SweetAlert.SweetAlertDialog;
+
 import static com.itextpdf.text.html.WebColors.getRGBColor;
 import static com.jby.thezprinting.shareObject.CustomToast.CustomToast;
 import static com.jby.thezprinting.shareObject.VariableUtils.REQUEST_UPDATE;
@@ -89,7 +97,8 @@ import static com.jby.thezprinting.shareObject.VariableUtils.REQUEST_WRITE_EXTER
 
 
 public class DetailActivity extends AppCompatActivity implements View.OnClickListener, AbsListView.MultiChoiceModeListener,
-        AddItemDialog.AddItemDialogCallBack, AdapterView.OnItemClickListener {
+        AddItemDialog.AddItemDialogCallBack, AdapterView.OnItemClickListener, CustomerDialog.CustomerDialogCallBack,
+        PrintOptionDialog.PrintOptionDialogCallBack, DepositDialog.DepositDialogCallBack {
     private Toolbar toolbar;
     /*
      * intent parameter
@@ -104,14 +113,29 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     AsyncTaskManager asyncTaskManager;
     JSONObject jsonObjectLoginResponse;
     ArrayList<ApiDataObject> apiDataObjectArrayList;
+    private Handler handler;
     /*
      * progress bar
      * */
     private ProgressBar progressBar;
+    /*
+     * customer purpose
+     * */
+    private TextView selectedCustomer;
+    private LinearLayout selectCustomerLayout;
+    private CustomerObject customerObject;
 
+    /*
+     * item purpose
+     * */
     private TextView no_item_layout, status;
-    private EditText target;
     private Button addItemButton, actionButton;
+    /*
+     * deposit purpose
+     * */
+    private Button depositButton;
+    private LinearLayout depositLayout, balanceLayout;
+    private TextView tvDeposit, balance;
     /*
      * date
      * */
@@ -129,15 +153,27 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     private LinearLayout totalLayout;
     private TextView total;
     float totalPrice = 0;
+    private float deposit = 0;
     /*
      * pdf
      * */
+    private boolean isDeliveryOrder = false;
+    //spacing
+    private boolean autoSpacing;
+    private boolean artWorkProvided = true;
+    private int customSpacing;
+    //currency
+    private String currency;
+    private double rate = 1;
+
     private File pdfFile;
     Font boldFont = new Font(Font.FontFamily.TIMES_ROMAN, 10, Font.BOLD);
+    Font smallBoldFont = new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.BOLD);
     Font normalFont = new Font(Font.FontFamily.TIMES_ROMAN, 10, Font.NORMAL);
     Font headerFont = new Font(Font.FontFamily.TIMES_ROMAN, 12, Font.BOLD);
     Font largeFont = new Font(Font.FontFamily.TIMES_ROMAN, 15, Font.BOLD);
     Font smallFont = new Font(Font.FontFamily.TIMES_ROMAN, 8, Font.NORMAL);
+    Font mandarin;
     /*
      * on back press control
      * */
@@ -147,6 +183,10 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     private ArrayList<DocumentObject> documentObjectArrayList;
     private DocumentDetailAdapter documentDetailAdapter;
     private int selectedPosition = 0;
+    /*
+     * dialog
+     * */
+    private SweetAlertDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -161,10 +201,16 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         //not found layout
         tvDate = findViewById(R.id.date);
         no_item_layout = findViewById(R.id.no_item_found);
-        target = findViewById(R.id.target);
         addItemButton = findViewById(R.id.add_button);
         actionButton = findViewById(R.id.action_button);
         status = findViewById(R.id.status);
+
+        depositButton = findViewById(R.id.deposit_button);
+        tvDeposit = findViewById(R.id.deposit);
+        balance = findViewById(R.id.balance);
+        depositLayout = findViewById(R.id.deposit_layout);
+        balanceLayout = findViewById(R.id.balance_layout);
+
 
         listView = findViewById(R.id.list_view);
         documentObjectArrayList = new ArrayList<>();
@@ -173,17 +219,23 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         totalLayout = findViewById(R.id.total_layout);
         total = findViewById(R.id.total);
 
+        selectCustomerLayout = findViewById(R.id.select_customer_layout);
+        selectedCustomer = findViewById(R.id.select_customer);
+
         progressBar = findViewById(R.id.progress_bar);
+        handler = new Handler();
     }
 
     private void objectSetting() {
         tvDate.setOnClickListener(this);
         addItemButton.setOnClickListener(this);
         actionButton.setOnClickListener(this);
+        depositButton.setOnClickListener(this);
+        selectCustomerLayout.setOnClickListener(this);
 
         listView.setMultiChoiceModeListener(this);
-        listView.setOnItemClickListener(this);
         listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+        listView.setOnItemClickListener(this);
         listView.setAdapter(documentDetailAdapter);
         listView.setExpanded(true);
 
@@ -208,6 +260,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             }
         }
         setupActionBar();
+        setUpMandarin();
     }
 
 
@@ -216,7 +269,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             setSupportActionBar(toolbar);
             Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
-            getSupportActionBar().setTitle(intentType.equals("quotation") ? "Quotation" : "Invoice" + (intentAction.equals("edit") ? ": " + setQuotationPlaceHolder(documentHeaderInformation.getDocumentID()) : ""));
+            getSupportActionBar().setTitle(intentType.equals("quotation") ? "Quotation" : "Invoice" + (intentAction.equals("edit") ? ": " + setQuotationPlaceHolder(documentHeaderInformation.getDocumentNo()) : ""));
 
         } catch (NullPointerException e) {
             e.printStackTrace();
@@ -252,18 +305,13 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             case R.id.delete:
                 deleteConfirmationDialog(true);
                 return true;
+            case R.id.print_do:
+                isDeliveryOrder = true;
+                printAction();
+                return true;
             case R.id.print:
-                if (initializeSize != documentObjectArrayList.size()) {
-                    printConfirmation();
-                } else {
-                    try {
-                        createPdfWrapper();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (DocumentException e) {
-                        e.printStackTrace();
-                    }
-                }
+                isDeliveryOrder = false;
+                printAction();
                 return true;
             case R.id.convert:
                 convertQuotationToInvoice();
@@ -276,36 +324,36 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+    private void openPrintOptionDialog() {
+        Bundle bundle = new Bundle();
+        bundle.putBoolean("isDeliveryOrder", isDeliveryOrder);
+
+        DialogFragment dialogFragment = new PrintOptionDialog();
+        dialogFragment.setArguments(bundle);
+        dialogFragment.show(getSupportFragmentManager(), "");
+    }
+
+    private void printAction() {
+        if (documentObjectArrayList.size() > 0) {
+            if (initializeSize != documentObjectArrayList.size()) {
+                requestUploadBeforePrintConfirmation();
+            } else {
+                try {
+                    createPdfWrapper();
+                } catch (FileNotFoundException | DocumentException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            Toast.makeText(this, "Nothing to print!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void setMenuItemVisibility(Menu menu) {
         menu.findItem(R.id.convert).setVisible(intentType.equals("quotation"));
+        menu.findItem(R.id.complete).setVisible(!intentType.equals("quotation"));
+        menu.findItem(R.id.print_do).setVisible(true);
     }
-
-    public void printConfirmation() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Warning");
-        builder.setMessage("You are required to upload the items first before proceed to print!");
-        builder.setCancelable(true);
-
-        builder.setPositiveButton(
-                "Upload Now",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        uploadConfirmation();
-                        dialog.dismiss();
-                    }
-                });
-
-        builder.setNegativeButton(
-                "I Got It",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        dialog.dismiss();
-                    }
-                });
-        AlertDialog alert = builder.create();
-        alert.show();
-    }
-
 
     /*-------------------------------------------------------------------------create purpose---------------------------------------------------------------------*/
     private void setCreateLayout() {
@@ -315,7 +363,6 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
     /*------------------------------------------------------------------------edit purpose------------------------------------------------------------------------*/
     private void setUpdateLayout() {
-        target.append(documentHeaderInformation.getTarget());
         tvDate.setText(createdDate);
         /*
          * set status
@@ -336,7 +383,12 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         /*
          * fetch detail
          * */
-        fetchDocumentDetail();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                fetchDocumentDetail();
+            }
+        }, 200);
     }
 
     private void fetchDocumentDetail() {
@@ -371,10 +423,16 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                                             jsonArray.getJSONObject(i).getString("item"),
                                             jsonArray.getJSONObject(i).getString("price"),
                                             jsonArray.getJSONObject(i).getString("quantity"),
-                                            jsonArray.getJSONObject(i).getString("sub_total"),
-                                            ""
+                                            jsonArray.getJSONObject(i).getString("sub_total")
                                     ));
                                 }
+                                /*
+                                 * set up customer detail
+                                 * */
+                                setUpCustomerDetail(jsonObjectLoginResponse.getJSONArray("customer_detail"));
+                                /*
+                                 * count total price
+                                 * */
                                 countTotal();
                                 /*
                                  * for control print pdf purpose
@@ -404,6 +462,22 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         }).start();
     }
 
+    private void setUpCustomerDetail(JSONArray jsonArray) throws JSONException {
+        customerObject = new CustomerObject(
+                jsonArray.getJSONObject(0).getString("customer_id"),
+                jsonArray.getJSONObject(0).getString("name"),
+                jsonArray.getJSONObject(0).getString("address"),
+                jsonArray.getJSONObject(0).getString("contact"));
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                selectedCustomer.setText(customerObject.getName());
+            }
+        });
+
+    }
+
     private void setUpView() {
         runOnUiThread(new Runnable() {
             @Override
@@ -424,6 +498,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             @Override
             public void run() {
                 progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+
             }
         });
     }
@@ -442,7 +517,30 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             case R.id.date:
                 openDatePicker();
                 break;
+            case R.id.select_customer_layout:
+                openCustomerDialog();
+                break;
+            case R.id.deposit_button:
+                openDepositDialog();
+                break;
         }
+    }
+
+    /*-------------------------------------------------------------------customer-----------------------------------------------------------------------------*/
+    private void openCustomerDialog() {
+        Bundle bundle = new Bundle();
+        bundle.putBoolean("isMainActivity", false);
+
+        DialogFragment dialogFragment = new CustomerDialog();
+        dialogFragment.setArguments(bundle);
+        dialogFragment.show(getSupportFragmentManager(), "");
+    }
+
+
+    @Override
+    public void selectedItem(CustomerObject object) {
+        this.customerObject = object;
+        selectedCustomer.setText(object.getName());
     }
 
     /*-------------------------------------------------------------------date picker-----------------------------------------------------------------------------*/
@@ -579,12 +677,12 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
     /*--------------------------------------------------------cloud crud--------------------------------------------------------*/
     private void checking() {
-        if (documentObjectArrayList.size() > 0 && !target.getText().toString().equals("")) {
+        if (documentObjectArrayList.size() > 0 && customerObject != null && !customerObject.getCustomerID().equals("")) {
             showProgressBar(true);
             if (intentAction.equals("edit")) updateDocument();
             else createDocument();
         } else {
-            showSnackBar("No item to upload!");
+            showSnackBar("Please Check you input!");
         }
     }
 
@@ -597,7 +695,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             public void run() {
                 apiDataObjectArrayList = new ArrayList<>();
                 apiDataObjectArrayList.add(new ApiDataObject("user_id", SharedPreferenceManager.getUserId(getApplicationContext())));
-                apiDataObjectArrayList.add(new ApiDataObject("target", target.getText().toString()));
+                apiDataObjectArrayList.add(new ApiDataObject("customer_id", customerObject.getCustomerID()));
                 apiDataObjectArrayList.add(new ApiDataObject("create", "1"));
                 apiDataObjectArrayList.add(new ApiDataObject("date", tvDate.getText().toString()));
 
@@ -662,7 +760,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             @Override
             public void run() {
                 apiDataObjectArrayList = new ArrayList<>();
-                apiDataObjectArrayList.add(new ApiDataObject("target", target.getText().toString()));
+                apiDataObjectArrayList.add(new ApiDataObject("customer_id", customerObject.getCustomerID()));
                 apiDataObjectArrayList.add(new ApiDataObject(intentType.equals("quotation") ? "quotation_id" : "invoice_id", documentHeaderInformation.getDocumentID()));
                 apiDataObjectArrayList.add(new ApiDataObject("update", "1"));
 
@@ -804,7 +902,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                                     @Override
                                     public void run() {
                                         initializeSize = documentObjectArrayList.size();
-                                        CustomToast(getApplicationContext(), "Delete Successfully!");
+                                        Toast.makeText(DetailActivity.this, "Delete Successfully!", Toast.LENGTH_SHORT).show();
                                         setResult(REQUEST_UPDATE);
                                         onBackPressed();
                                     }
@@ -832,18 +930,18 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             }
         }).start();
     }
+
     /*
-    * convert quotaion to invoice
-    * */
+     * convert quotaion to invoice
+     * */
     private void convertQuotationToInvoice() {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 apiDataObjectArrayList = new ArrayList<>();
                 apiDataObjectArrayList.add(new ApiDataObject("user_id", SharedPreferenceManager.getUserId(getApplicationContext())));
-                apiDataObjectArrayList.add(new ApiDataObject("target", target.getText().toString()));
+                apiDataObjectArrayList.add(new ApiDataObject("customer_id", customerObject.getCustomerID()));
                 apiDataObjectArrayList.add(new ApiDataObject("create", "1"));
-                apiDataObjectArrayList.add(new ApiDataObject("date", tvDate.getText().toString()));
                 apiDataObjectArrayList.add(new ApiDataObject("quotation_id", documentHeaderInformation.getDocumentID()));
 
 
@@ -869,7 +967,11 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                                     public void run() {
                                         initializeSize = documentObjectArrayList.size();
                                         try {
-                                            CustomToast(getApplicationContext(), "Convert Successfully!");
+                                            statusDialog("Convert Status", "Convert Successfully!", true);
+                                            pushCreateNotification(true, documentHeaderInformation.getDocumentID(), "complete");
+                                            /*
+                                            * update UI from quotation to invoice
+                                            * */
                                             documentHeaderInformation.setDocumentID(jsonObjectLoginResponse.getString("invoice_id"));
                                             intentType = "invoice";
                                             setupActionBar();
@@ -878,6 +980,8 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                                         }
                                     }
                                 });
+                            } else if (jsonObjectLoginResponse.getString("status").equals("3")) {
+                                statusDialog("Convert Status", "This quotation is converted before!", false);
                             }
 
                         } else {
@@ -903,8 +1007,8 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     /*
-    * update invoice status
-    * */
+     * update invoice status
+     * */
     private void updateInvoiceStatus() {
         new Thread(new Runnable() {
             @Override
@@ -931,10 +1035,10 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                         Log.d("haha", "Convert: " + jsonObjectLoginResponse);
                         if (jsonObjectLoginResponse != null) {
                             if (jsonObjectLoginResponse.getString("status").equals("1")) {
-                                CustomToast(getApplicationContext(), "Update Successfully!");
-                            }
-                            else{
-                                CustomToast(getApplicationContext(), "Something went wrong!");
+                                statusDialog("Update Status", "Update Successfully!", true);
+                                pushCreateNotification(false, documentHeaderInformation.getDocumentID(), "complete");
+                            } else {
+                                statusDialog("Update Status", "Update Failed!", false);
                             }
 
                         } else {
@@ -989,13 +1093,15 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                         if (finished) {
                             initializeSize = documentObjectArrayList.size();
                             showProgressBar(false);
-                            showSnackBar("Upload Successfully!");
+                            pushCreateNotification(intentType.equals("quotation"), documentID, "create");
+                            statusDialog("Upload Status", "Upload Successfully!", true);
                         }
                     }
                 } else {
                     CustomToast(getApplicationContext(), "Network Error!");
+                    showProgressBar(false);
+                    statusDialog("Upload Status", "Upload Failed!", false);
                 }
-                showProgressBar(false);
             } catch (InterruptedException e) {
                 CustomToast(getApplicationContext(), "Interrupted Exception!");
                 e.printStackTrace();
@@ -1013,6 +1119,29 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     /*----------------------------------------------------------------confirmation dialog-------------------------------------------------------------------*/
+    public void requestUploadBeforePrintConfirmation() {
+        final SweetAlertDialog dialog = new SweetAlertDialog(this, SweetAlertDialog.WARNING_TYPE);
+        dialog.setTitleText("Warning");
+        dialog.setContentText("Please Upload before Print!");
+        dialog.setConfirmText("Okay");
+        dialog.setCancelText("Cancel");
+        dialog.setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+            @Override
+            public void onClick(SweetAlertDialog sweetAlertDialog) {
+                uploadConfirmation();
+                dialog.dismissWithAnimation();
+            }
+        });
+        dialog.setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
+            @Override
+            public void onClick(SweetAlertDialog sweetAlertDialog) {
+                dialog.dismissWithAnimation();
+            }
+        });
+        dialog.show();
+
+    }
+
     public void deleteConfirmationDialog(final boolean deleteWholeDocument) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Delete Request");
@@ -1041,29 +1170,25 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     public void uploadConfirmation() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Upload Request");
-        builder.setMessage("Are you sure that you want to do so?");
-        builder.setCancelable(true);
-
-        builder.setPositiveButton(
-                "Upload",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        checking();
-                        dialog.dismiss();
-                    }
-                });
-
-        builder.setNegativeButton(
-                "No",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        dialog.cancel();
-                    }
-                });
-        AlertDialog alert = builder.create();
-        alert.show();
+        dialog = new SweetAlertDialog(this, SweetAlertDialog.WARNING_TYPE);
+        dialog.setTitleText("Upload Request");
+        dialog.setContentText("Are you sure that you want to do so?");
+        dialog.setConfirmText("Upload");
+        dialog.setCancelText("Cancel");
+        dialog.setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+            @Override
+            public void onClick(SweetAlertDialog sweetAlertDialog) {
+                checking();
+                dialog.dismissWithAnimation();
+            }
+        });
+        dialog.setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
+            @Override
+            public void onClick(SweetAlertDialog sweetAlertDialog) {
+                dialog.dismissWithAnimation();
+            }
+        });
+        dialog.show();
     }
 
     public void updateInvoiceStatusConfirmation() {
@@ -1092,9 +1217,40 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         alert.show();
     }
 
-    /*---------------------------------------------------------count total -----------------------------------------------------------------------------------*/
+    public void statusDialog(final String title, final String content, final boolean success) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                final SweetAlertDialog dialog = new SweetAlertDialog(DetailActivity.this, success ? SweetAlertDialog.SUCCESS_TYPE : SweetAlertDialog.ERROR_TYPE);
+                dialog.setTitleText(title);
+                dialog.setContentText(content);
+                if (success) {
+                    dialog.setConfirmText("Okay");
+                    dialog.setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                        @Override
+                        public void onClick(SweetAlertDialog sweetAlertDialog) {
+                            dialog.dismissWithAnimation();
+                        }
+                    });
+                } else {
+                    dialog.setConfirmText(null);
+                    dialog.setCancelText("Cancel");
+                    dialog.setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                        @Override
+                        public void onClick(SweetAlertDialog sweetAlertDialog) {
+                            dialog.dismissWithAnimation();
+                        }
+                    });
+                }
+                dialog.show();
+            }
+        });
+    }
+
+    /*---------------------------------------------------------count total and deposit-----------------------------------------------------------------------------------*/
     private void countTotal() {
         runOnUiThread(new Runnable() {
+            @SuppressLint("DefaultLocale")
             @Override
             public void run() {
                 totalPrice = 0;
@@ -1103,11 +1259,106 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                 }
                 totalLayout.setVisibility(totalPrice > 0 ? View.VISIBLE : View.GONE);
                 total.setText(String.format("RM%s", totalPrice > 0 ? String.format("%.2f", totalPrice) : "0"));
+                /*
+                 * count deposit
+                 * */
+                try {
+                    Log.d("haha", "deposit:: " + deposit);
+                    deposit = Float.valueOf(documentHeaderInformation.getDeposit());
+                } catch (NumberFormatException | NullPointerException e) {
+                    deposit = 0;
+                }
+                setDepositVisibility();
             }
         });
     }
 
+    private void openDepositDialog() {
+        Bundle bundle = new Bundle();
+        bundle.putString("invoice_id", documentHeaderInformation.getDocumentID());
+        bundle.putString("deposit", String.valueOf(deposit));
+
+        DialogFragment dialogFragment = new DepositDialog();
+        dialogFragment.setArguments(bundle);
+        dialogFragment.show(getSupportFragmentManager(), "");
+    }
+
+    private void setDepositVisibility() {
+        if (deposit > 0) {
+            depositLayout.setVisibility(View.VISIBLE);
+            balanceLayout.setVisibility(View.VISIBLE);
+            tvDeposit.setText("RM " + String.format("%.2f", deposit));
+            balance.setText("RM " + String.format("%.2f", totalPrice - deposit));
+        } else {
+            depositLayout.setVisibility(View.GONE);
+            balanceLayout.setVisibility(View.GONE);
+        }
+        depositButton.setVisibility(intentType.equals("quotation") ? View.GONE : View.VISIBLE);
+    }
+
+    @Override
+    public void updateDeposit(String deposit) {
+        this.deposit = Float.valueOf(deposit);
+        setDepositVisibility();
+    }
+
+    /*-----------------------------------------------------------------------notification-------------------------------------------------------------------------------*/
+    private void pushCreateNotification(final boolean isQuotation, final String documentId, final String type) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                apiDataObjectArrayList = new ArrayList<>();
+                apiDataObjectArrayList.add(new ApiDataObject("create", "1"));
+                apiDataObjectArrayList.add(new ApiDataObject("user_id", SharedPreferenceManager.getUserId(getApplicationContext())));
+                apiDataObjectArrayList.add(new ApiDataObject("type", type));
+                apiDataObjectArrayList.add(new ApiDataObject(isQuotation ? "quotation_id" : "invoice_id", documentId));
+                Log.d("haha","hahaha2:"  + isQuotation);
+
+                asyncTaskManager = new AsyncTaskManager(
+                        getApplicationContext(),
+                        new ApiManager().notification,
+                        new ApiManager().getResultParameter(
+                                "",
+                                new ApiManager().setData(apiDataObjectArrayList),
+                                ""
+                        )
+                );
+                asyncTaskManager.execute();
+
+                if (!asyncTaskManager.isCancelled()) {
+                    try {
+                        jsonObjectLoginResponse = asyncTaskManager.get(30000, TimeUnit.MILLISECONDS);
+                        showProgressBar(false);
+                    } catch (InterruptedException e) {
+                        CustomToast(getApplicationContext(), "Interrupted Exception!");
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        CustomToast(getApplicationContext(), "Execution Exception!");
+                        e.printStackTrace();
+                    } catch (TimeoutException e) {
+                        CustomToast(getApplicationContext(), "Connection Time Out!");
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
     /*------------------------------------------------------------------generate pdf---------------------------------------------------------------------------*/
+
+    @Override
+    public void printOption(boolean autoSpacing, boolean artWorkProvided, int customSpacing, String currency, double rate) {
+        Log.d("haha", "artwork: " + artWorkProvided);
+        this.autoSpacing = autoSpacing;
+        this.artWorkProvided = artWorkProvided;
+        this.customSpacing = customSpacing;
+        this.currency = currency;
+        this.rate = rate;
+
+        if (isDeliveryOrder) createDeliveryOrder();
+        else createPdf();
+    }
+
     private void createPdfWrapper() throws FileNotFoundException, DocumentException {
 
         int hasWriteStoragePermission = ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -1115,7 +1366,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (!shouldShowRequestPermissionRationale(Manifest.permission.WRITE_CONTACTS)) {
-                    showMessageOKCancel("You need to allow access to Storage",
+                    showMessageOKCancel(
                             new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
@@ -1130,7 +1381,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                         REQUEST_WRITE_EXTERNAL_PERMISSION);
             }
         } else {
-            createPdf();
+            openPrintOptionDialog();
         }
     }
 
@@ -1139,13 +1390,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         if (requestCode == REQUEST_WRITE_EXTERNAL_PERMISSION) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission Granted
-                try {
-                    createPdfWrapper();
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (DocumentException e) {
-                    e.printStackTrace();
-                }
+                printAction();
             } else {
                 // Permission Denied
                 Toast.makeText(this, "WRITE_EXTERNAL Permission Denied", Toast.LENGTH_SHORT)
@@ -1155,15 +1400,336 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    private void showMessageOKCancel(String message, DialogInterface.OnClickListener okListener) {
+    private void showMessageOKCancel(DialogInterface.OnClickListener okListener) {
         new AlertDialog.Builder(this)
-                .setMessage(message)
+                .setMessage("You need to allow access to Storage")
                 .setPositiveButton("OK", okListener)
                 .setNegativeButton("Cancel", null)
                 .create()
                 .show();
     }
 
+    /*
+     * print DO
+     * */
+    private void createDeliveryOrder() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                showProgressBar(true);
+
+                File docsFolder = new File(Environment.getExternalStorageDirectory() + "/ThezPrinting");
+                if (!docsFolder.exists()) {
+                    docsFolder.mkdir();
+                    Log.i("Detail Activity", "Created a new directory for PDF");
+                }
+                pdfFile = new File(docsFolder.getAbsolutePath(), setDeliveryOrderPlaceHolder(documentHeaderInformation.getDocumentNo()) + ".pdf");
+                OutputStream output = null;
+                try {
+                    output = new FileOutputStream(pdfFile);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+                Document document = new Document();
+                try {
+                    String[] DoHeader = {"S.No", "Description", "Unit", "Quantity"};
+                    //use to set background color
+                    BaseColor white = getRGBColor("#ffffff");
+
+                    PdfWriter.getInstance(document, output);
+                    document.open();
+                    document.add(new Paragraph(""));
+
+
+                    try {
+                        PdfPCell cell;
+                        Image bgImage;
+                        //set drawable in cell
+                        Drawable myImage = getApplicationContext().getResources().getDrawable(R.drawable.thezlogo);
+                        Bitmap bitmap = ((BitmapDrawable) myImage).getBitmap();
+                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+
+                        byte[] bitmapdata = stream.toByteArray();
+                        try {
+                            /*-----------------------------------------------------header------------------------------------------------------------*/
+                            //create table
+                            PdfPTable pt = new PdfPTable(3);
+                            pt.setWidthPercentage(100);
+                            float[] fl = new float[]{40, 20, 40};
+                            pt.setWidths(fl);
+
+                            cell = new PdfPCell();
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            bgImage = Image.getInstance(bitmapdata);
+                            bgImage.scaleToFit(100f, 80f);
+                            cell.addElement(bgImage);
+                            cell.setBackgroundColor(white);
+                            cell.setColspan(1);
+                            pt.addCell(cell);
+
+                            cell = new PdfPCell();
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            cell.addElement(new Phrase(""));
+                            pt.addCell(cell);
+
+                            cell = new PdfPCell();
+                            cell.setColspan(1);
+                            cell.setBackgroundColor(white);
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            Paragraph documentHeader = new Paragraph();
+                            documentHeader.setAlignment(Element.ALIGN_RIGHT);
+                            documentHeader.setFont(largeFont);
+                            documentHeader.add("Delivery Order");
+                            cell.addElement(documentHeader);
+
+                            Phrase date = new Phrase("Date: ", boldFont);
+                            date.add(new Chunk(createdDate != null ? createdDate : tvDate.getText().toString(), normalFont));
+                            cell.addElement(date);
+
+                            Phrase documentId = new Phrase("ID: ", boldFont);
+                            documentId.add(new Chunk(setDeliveryOrderPlaceHolder(documentHeaderInformation.getDocumentNo()), normalFont));
+                            cell.addElement(documentId);
+
+                            pt.addCell(cell);
+
+                            cell = new PdfPCell();
+                            cell.setColspan(1);
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            Paragraph customer = new Paragraph();
+                            customer.setAlignment(Element.ALIGN_LEFT);
+                            customer.add("Bill To:");
+                            customer.setFont(boldFont);
+                            cell.addElement(customer);
+
+                            customer = new Paragraph();
+                            customer.setAlignment(Element.ALIGN_LEFT);
+
+                            customer.setFont(isMandarin(customerObject.getName()) ? mandarin : boldFont);
+                            customer.setLeading(12f);
+                            customer.add(customerObject.getName());
+
+                            customer.setFont(normalFont);
+                            customer.add(!customerObject.getAddress().equals("") ? "\n" + customerObject.getAddress() : "");
+
+                            customer.setFont(boldFont);
+                            customer.add(!customerObject.getContact().equals("") ? "\nContact Information" : "");
+
+                            customer.setFont(normalFont);
+                            customer.add(!customerObject.getContact().equals("") ? "\n" + customerObject.getContact() : "");
+
+                            cell.addElement(customer);
+
+                            cell.setBackgroundColor(white);
+                            pt.addCell(cell);
+
+                            cell = new PdfPCell();
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            cell.addElement(new Phrase(""));
+                            pt.addCell(cell);
+
+                            cell = new PdfPCell();
+                            cell.setColspan(1);
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            Paragraph companyName = new Paragraph();
+                            companyName.setFont(boldFont);
+                            companyName.add("THEz Printing ＆ Design ");
+                            companyName.setFont(smallBoldFont);
+                            companyName.add("(002923140-P)");
+                            cell.addElement(companyName);
+
+                            Paragraph companyDetail = new Paragraph();
+                            companyDetail.setFont(normalFont);
+                            companyDetail.setLeading(12f);
+                            companyDetail.add("39, Jalan Tasek 51");
+                            companyDetail.add("\nBandar Seri Alam");
+                            companyDetail.add("\nJohor Bahru, Johor 81750");
+                            companyDetail.add("\nMalaysia");
+                            cell.addElement(companyDetail);
+
+                            cell.addElement(new Phrase("Contact Information ", boldFont));
+                            cell.addElement(new Phrase("Mobile: 01110640416", normalFont));
+                            cell.addElement(new Phrase("Email: thezprinting0105@gmail.com", normalFont));
+                            cell.setBackgroundColor(white);
+                            pt.addCell(cell);
+
+
+                            cell = new PdfPCell();
+                            cell.setColspan(4);
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            cell.addElement(new Paragraph("\n"));
+                            pt.addCell(cell);
+
+                            cell = new PdfPCell();
+                            cell.setColspan(4);
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            cell.addElement(pt);
+
+                            /*-----------------------------------------------------content------------------------------------------------------------*/
+
+                            PdfPTable table = new PdfPTable(4);
+                            table.setWidthPercentage(100);
+                            float[] columnWidth = new float[]{10, 50, 20, 20};
+                            table.setWidths(columnWidth);
+                            table.addCell(cell);
+
+                            for (int i = 0; i < DoHeader.length; i++) {
+                                cell = new PdfPCell(new Phrase(DoHeader[i], headerFont));
+                                if (i == 1 || i == 0)
+                                    cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+                                else cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                                cell.setBorder(Rectangle.NO_BORDER);
+                                cell.setBackgroundColor(white);
+                                table.addCell(cell);
+                            }
+
+                            //line
+                            cell = new PdfPCell();
+                            cell.setColspan(4);
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            table.addCell(cell);
+
+                            cell = new PdfPCell();
+                            cell.setColspan(4);
+                            cell.setBorder(Rectangle.BOX);
+                            table.addCell(cell);
+
+                            for (int i = 0; i < documentObjectArrayList.size(); i++) {
+                                for (int j = 0; j < 4; j++) {
+                                    cell = new PdfPCell();
+                                    cell.setColspan(1);
+                                    cell.setBorder(Rectangle.NO_BORDER);
+                                    cell.addElement(returnDoColumnData(i, j));
+                                    table.addCell(cell);
+                                }
+                            }
+
+                            cell = new PdfPCell();
+                            cell.setColspan(4);
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            table.addCell(countSpacing(cell, 8));
+
+                            cell = new PdfPCell();
+                            cell.setColspan(4);
+                            cell.setBorder(Rectangle.BOX);
+                            table.addCell(cell);
+                            /*-----------------------------------------------------total and tax-----------------------------------------------------*/
+
+                            cell = new PdfPCell();
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            cell.setColspan(4);
+                            cell.addElement(new Paragraph("1. I confirm that all goods received are in good order and condition.", normalFont));
+                            table.addCell(cell);
+
+                            /*--------------------------------------------------footer------------------------------------------------------------------*/
+                            PdfPTable footerTable = new PdfPTable(1);
+                            footerTable.setWidthPercentage(100);
+
+                            cell = new PdfPCell();
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            cell.addElement(table);
+
+                            cell.addElement(new Paragraph("\n"));
+                            cell.addElement(new Paragraph("\n"));
+                            cell.addElement(new Paragraph("\n"));
+                            cell.addElement(new Paragraph("\n"));
+                            cell.addElement(new Paragraph("\n"));
+                            cell.addElement(new Paragraph("\n"));
+                            /*
+                             * sign line
+                             * */
+                            PdfPTable signTable = new PdfPTable(3);
+                            signTable.setWidthPercentage(100);
+                            float[] signTableWidth = new float[]{35, 32, 32};
+                            signTable.setWidths(signTableWidth);
+
+                            PdfPCell signTableCell = new PdfPCell();
+                            signTableCell.setColspan(1);
+                            signTable.addCell(signTableCell);
+
+                            PdfPCell blankCell = new PdfPCell();
+                            blankCell.setBorder(Rectangle.NO_BORDER);
+                            blankCell.setColspan(2);
+                            signTable.addCell(blankCell);
+
+                            cell.addElement(signTable);
+
+                            /*
+                             * sign by who
+                             * */
+                            Paragraph sign = new Paragraph();
+                            sign.setFont(boldFont);
+                            sign.add("Receiver's Signature / Company Stamp");
+                            cell.addElement(sign);
+
+
+                            cell.addElement(new Paragraph("\n"));
+
+                            Paragraph footer2 = new Paragraph();
+                            footer2.setFont(boldFont);
+                            footer2.setAlignment(Element.ALIGN_CENTER);
+                            footer2.add("Thank You For Your Business!");
+                            cell.addElement(footer2);
+
+                            footerTable.addCell(cell);
+                            document.add(footerTable);
+
+                        } catch (IOException e) {
+                            Log.e("PDFCreator", "ioException:" + e);
+                        } catch (NullPointerException e) {
+                            Log.e("Null", "null exception:" + e);
+                            CustomToast(getApplicationContext(), "Something is null!");
+                        } finally {
+                            document.close();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                showProgressBar(false);
+                previewPdf();
+            }
+        }).start();
+    }
+
+    private String setDeliveryOrderPlaceHolder(String do_id) {
+        StringBuilder do_idBuilder = new StringBuilder(do_id);
+        for (int i = do_idBuilder.length(); i < 5; i++) {
+            do_idBuilder.insert(0, "0");
+        }
+        return ("#DO") + do_idBuilder.toString();
+    }
+
+    private Paragraph returnDoColumnData(int i, int j) {
+        Paragraph itemDetail = new Paragraph();
+        itemDetail.setLeading(12f);
+        itemDetail.setAlignment(Element.ALIGN_RIGHT);
+        itemDetail.setFont(normalFont);
+        switch (j) {
+            case 0:
+                itemDetail.setAlignment(Element.ALIGN_LEFT);
+                itemDetail.add(String.valueOf(i + 1));
+                break;
+            case 1:
+                itemDetail.add(documentObjectArrayList.get(i).getItem());
+                itemDetail.setAlignment(Element.ALIGN_LEFT);
+                break;
+            case 2:
+                itemDetail.setFont(smallFont);
+                itemDetail.add("UNIT");
+                break;
+            default:
+                itemDetail.add(documentObjectArrayList.get(i).getQuantity());
+        }
+        return itemDetail;
+    }
+
+    /*
+     * print invoice or quotation
+     * */
     private void createPdf() {
         new Thread(new Runnable() {
             @Override
@@ -1175,7 +1741,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                     docsFolder.mkdir();
                     Log.i("Detail Activity", "Created a new directory for PDF");
                 }
-                pdfFile = new File(docsFolder.getAbsolutePath(), setQuotationPlaceHolder(documentHeaderInformation.getDocumentID()) + ".pdf");
+                pdfFile = new File(docsFolder.getAbsolutePath(), setQuotationPlaceHolder(documentHeaderInformation.getDocumentNo()) + ".pdf");
                 OutputStream output = null;
                 try {
                     output = new FileOutputStream(pdfFile);
@@ -1184,7 +1750,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                 }
                 Document document = new Document();
                 try {
-                    String[] productHeader = {"Item", "Quantity", "Price(RM)", "Amount(RM)"};
+                    String[] productHeader = {"Item", "Quantity", "Price(" + currency + ")", "Amount(" + currency + ")"};
                     //use to set background color
                     BaseColor white = getRGBColor("#ffffff");
 
@@ -1240,33 +1806,9 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                             cell.addElement(date);
 
                             Phrase documentId = new Phrase("ID: ", boldFont);
-                            documentId.add(new Chunk(setQuotationPlaceHolder(documentHeaderInformation.getDocumentID()), normalFont));
+                            documentId.add(new Chunk(setQuotationPlaceHolder(documentHeaderInformation.getDocumentNo()), normalFont));
                             cell.addElement(documentId);
 
-                            pt.addCell(cell);
-
-                            cell = new PdfPCell();
-                            cell.setColspan(1);
-                            cell.setBorder(Rectangle.NO_BORDER);
-                            cell.addElement(new Phrase("THEz Printing ＆ Design", boldFont));
-
-                            Paragraph companyDetail = new Paragraph();
-                            companyDetail.setFont(normalFont);
-                            companyDetail.setLeading(12f);
-                            companyDetail.add("29, Jalan Tasek 51");
-                            companyDetail.add("\nBandar Seri Alam");
-                            companyDetail.add("\nJohor Bahru, Johor 81750");
-                            companyDetail.add("'\nMalaysia");
-                            cell.addElement(companyDetail);
-
-                            cell.addElement(new Phrase("Contact Information ", boldFont));
-                            cell.addElement(new Phrase("Mobile: 01110640416", normalFont));
-                            cell.setBackgroundColor(white);
-                            pt.addCell(cell);
-
-                            cell = new PdfPCell();
-                            cell.setBorder(Rectangle.NO_BORDER);
-                            cell.addElement(new Phrase(""));
                             pt.addCell(cell);
 
                             cell = new PdfPCell();
@@ -1280,18 +1822,59 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
                             customer = new Paragraph();
                             customer.setAlignment(Element.ALIGN_LEFT);
-                            customer.setFont(normalFont);
+
+                            customer.setFont(isMandarin(customerObject.getName()) ? mandarin : boldFont);
                             customer.setLeading(12f);
-                            customer.add(target.getText().toString());
+                            customer.add(customerObject.getName());
+
+                            customer.setFont(normalFont);
+                            customer.add(!customerObject.getAddress().equals("") ? "\n" + customerObject.getAddress() : "");
+
+                            customer.setFont(boldFont);
+                            customer.add(!customerObject.getContact().equals("") ? "\nContact Information" : "");
+
+                            customer.setFont(normalFont);
+                            customer.add(!customerObject.getContact().equals("") ? "\n" + customerObject.getContact() : "");
+
                             cell.addElement(customer);
 
                             cell.setBackgroundColor(white);
                             pt.addCell(cell);
 
                             cell = new PdfPCell();
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            cell.addElement(new Phrase(""));
+                            pt.addCell(cell);
+
+                            cell = new PdfPCell();
+                            cell.setColspan(1);
+                            cell.setBorder(Rectangle.NO_BORDER);
+                            Paragraph companyName = new Paragraph();
+                            companyName.setFont(boldFont);
+                            companyName.add("THEz Printing ＆ Design ");
+                            companyName.setFont(smallBoldFont);
+                            companyName.add("(002923140-P)");
+                            cell.addElement(companyName);
+
+                            Paragraph companyDetail = new Paragraph();
+                            companyDetail.setFont(normalFont);
+                            companyDetail.setLeading(12f);
+                            companyDetail.add("39, Jalan Tasek 51");
+                            companyDetail.add("\nBandar Seri Alam");
+                            companyDetail.add("\nJohor Bahru, Johor 81750");
+                            companyDetail.add("\nMalaysia");
+                            cell.addElement(companyDetail);
+
+                            cell.addElement(new Phrase("Contact Information ", boldFont));
+                            cell.addElement(new Phrase("Mobile: 01110640416", normalFont));
+                            cell.addElement(new Phrase("Email: thezprinting0105@gmail.com", normalFont));
+                            cell.setBackgroundColor(white);
+                            pt.addCell(cell);
+
+
+                            cell = new PdfPCell();
                             cell.setColspan(4);
                             cell.setBorder(Rectangle.NO_BORDER);
-                            cell.addElement(new Paragraph("\n"));
                             cell.addElement(new Paragraph("\n"));
                             pt.addCell(cell);
 
@@ -1341,7 +1924,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                             cell = new PdfPCell();
                             cell.setColspan(4);
                             cell.setBorder(Rectangle.NO_BORDER);
-                            table.addCell(countSpacing(cell, 9));
+                            table.addCell(countSpacing(cell, 8));
 
                             cell = new PdfPCell();
                             cell.setColspan(4);
@@ -1356,6 +1939,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                             cell.addElement(new Paragraph("2. Prices is subject to 10% SST (if applicable)", smallFont));
                             cell.addElement(new Paragraph("3. 50% Deposit payment - Upon confirmation", smallFont));
                             cell.addElement(new Paragraph("4. Balance of payment – to be paid within 14 days after the trade have done.", smallFont));
+                            cell.addElement(new Paragraph("5. Overall process may takes up to 10 - 15 working days", boldFont));
                             table.addCell(cell);
 
                             cell = new PdfPCell();
@@ -1373,14 +1957,14 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
                             cell.addElement(new Paragraph("\n"));
                             /*
-                            * bank detail
-                            * */
+                             * bank detail
+                             * */
                             Paragraph bankDetail = new Paragraph();
                             bankDetail.setLeading(12f);
                             bankDetail.setFont(boldFont);
                             bankDetail.setAlignment(Element.ALIGN_LEFT);
                             bankDetail.add("\nBank Details:");
-                            bankDetail.add("\nTHEZ PRINTING & DESIGN");
+                            bankDetail.add("\nTHEZPRINTING&DESIGN");
                             bankDetail.add("\nOCBC BANK MALAYSIA");
                             bankDetail.add("\n791 102 4465");
                             cell.addElement(bankDetail);
@@ -1391,8 +1975,8 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                             cell.addElement(new Paragraph("\n"));
                             cell.addElement(new Paragraph("\n"));
                             /*
-                            * sign line
-                            * */
+                             * sign line
+                             * */
                             PdfPTable signTable = new PdfPTable(3);
                             signTable.setWidthPercentage(100);
                             float[] signTableWidth = new float[]{35, 32, 32};
@@ -1423,7 +2007,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                             Paragraph footer1 = new Paragraph();
                             footer1.setFont(boldFont);
                             footer1.setAlignment(Element.ALIGN_CENTER);
-                            footer1.add("If you have any question concerning this quotation please kindly contact us");
+                            footer1.add("If you have any question concerning this " + (intentType.equals("quotation") ? "quotation" : "invoice") + " please kindly contact us");
                             cell.addElement(footer1);
 
 
@@ -1435,7 +2019,6 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
                             footerTable.addCell(cell);
                             document.add(footerTable);
-
 
                         } catch (IOException e) {
                             Log.e("PDFCreator", "ioException:" + e);
@@ -1458,21 +2041,12 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         }).start();
     }
 
-    private PdfPCell countSpacing(PdfPCell cell, int size) {
-        if (size > documentObjectArrayList.size()) {
-            for (int i = (size - documentObjectArrayList.size()); i > 0; i--) {
-                cell.addElement(new Paragraph("\n"));
-            }
-        } else {
-            for (int i = 4; i > 0; i--) {
-                cell.addElement(new Paragraph("\n"));
-            }
-        }
-        return cell;
-    }
-
+    /*
+     * invoice and quotation column data
+     * */
     private Paragraph returnColumnData(int i, int j) {
         Paragraph itemDetail = new Paragraph();
+        itemDetail.setLeading(12f);
         itemDetail.setAlignment(Element.ALIGN_RIGHT);
         itemDetail.setFont(normalFont);
         switch (j) {
@@ -1484,14 +2058,59 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                 itemDetail.add(documentObjectArrayList.get(i).getQuantity());
                 break;
             case 2:
-                itemDetail.add(documentObjectArrayList.get(i).getPrice());
+                double price = Double.valueOf(documentObjectArrayList.get(i).getPrice()) / rate;
+                itemDetail.add(decimalControl(price));
                 break;
             default:
-                itemDetail.add(documentObjectArrayList.get(i).getSubTotal());
+                double subTotal = Double.valueOf(documentObjectArrayList.get(i).getSubTotal()) / rate;
+                itemDetail.add(String.format("%.2f", subTotal));
         }
         return itemDetail;
     }
 
+    @SuppressLint("DefaultLocale")
+    private String decimalControl(double value) {
+        return BigDecimal.valueOf(value).scale() > 2 ? String.format("%.3f", value) : String.format("%.2f", value);
+    }
+
+    /*
+     * count spacing
+     * */
+    private PdfPCell countSpacing(PdfPCell cell, int size) {
+        if (autoSpacing) {
+            if (size > documentObjectArrayList.size()) {
+                for (int i = (size - documentObjectArrayList.size()); i > 0; i--) {
+                    if (artWorkProvided && i == 1) {
+                        cell.addElement(new Paragraph("Artwork provided by client.", boldFont));
+                        return cell;
+                    }
+                    cell.addElement(new Paragraph("\n"));
+                }
+            } else {
+                for (int i = 2; i > 0; i--) {
+                    if (artWorkProvided && i == 1) {
+                        cell.addElement(new Paragraph("Artwork provided by client.", boldFont));
+                        return cell;
+                    }
+                    cell.addElement(new Paragraph("\n"));
+                }
+            }
+        } else {
+            for (int i = 0; i < customSpacing; i++) {
+                if (artWorkProvided && i == customSpacing - 1) {
+                    cell.addElement(new Paragraph("Artwork provided by client.", boldFont));
+                    return cell;
+                }
+                cell.addElement(new Paragraph("\n"));
+            }
+        }
+        return cell;
+    }
+
+    /*
+     * invoice and quotation total
+     * */
+    @SuppressLint("DefaultLocale")
     private PdfPCell totalAndTaxTable() throws DocumentException {
         PdfPCell parentCell = new PdfPCell();
         parentCell.setColspan(2);
@@ -1502,7 +2121,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         float[] fl = new float[]{50, 50};
         totalAndTaxTable.setWidths(fl);
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; deposit == 0 ? i < 3 : i < 5; i++) {
             PdfPCell cell = new PdfPCell();
 
             cell.setColspan(1);
@@ -1520,6 +2139,12 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                 case 2:
                     labelSubTotal.add("Total");
                     break;
+                case 3:
+                    labelSubTotal.add("Deposit ");
+                    break;
+                case 4:
+                    labelSubTotal.add("Balance Due");
+                    break;
             }
             cell.addElement(labelSubTotal);
             totalAndTaxTable.addCell(cell);
@@ -1530,8 +2155,18 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             Paragraph subTotal = new Paragraph();
             subTotal.setFont(normalFont);
             subTotal.setAlignment(Element.ALIGN_RIGHT);
-            Log.d("haha", "total price: " + String.format("%.2f", totalPrice));
-            subTotal.add(i != 1 ? String.format("%.2f", totalPrice) : "0.00");
+            if (deposit == 0) {
+                subTotal.add(i != 1 ? String.format("%.2f", totalPrice / rate) : "0.00");
+            } else {
+                if (i == 3) {
+                    subTotal.add(String.format("%.2f", deposit / rate));
+                } else if (i == 4) {
+                    subTotal.add(String.format("%.2f", totalPrice / rate - deposit / rate));
+                } else {
+                    subTotal.add(i != 1 ? String.format("%.2f", totalPrice / rate) : "0.00");
+                }
+            }
+
             cell.addElement(subTotal);
             totalAndTaxTable.addCell(cell);
         }
@@ -1562,20 +2197,33 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
-//    private void shareFile(File file){
-//        Uri uriToImage = FileProvider.getUriForFile(
-//                this, getResources().getString(R.string.file_provider_authority), file);
-//
-//        Intent shareIntent = ShareCompat.IntentBuilder.from(context)
-//                .setStream(uriToImage)
-//                .getIntent()
-//                //provide read access
-//                .setData(uriToImage)
-//                .setType("text/plain")
-//                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-//
-//        context.startActivity(shareIntent);
-//    }
+    private void setUpMandarin() {
+        BaseFont mandarinFile = null;
+        try {
+            mandarinFile = BaseFont.createFont("assets/fonts/simsun.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+        } catch (DocumentException e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), "Not Found", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), "Not Found", Toast.LENGTH_SHORT).show();
+        }
+        mandarin = new Font(mandarinFile, 10, Font.BOLD);
+    }
+
+    public static boolean isMandarin(String str) {
+        int length = str.length();
+        for (int i = 0; i < length; i++) {
+            char ch = str.charAt(i);
+            Character.UnicodeBlock block = Character.UnicodeBlock.of(ch);
+            if (Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS.equals(block) ||
+                    Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS.equals(block) ||
+                    Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A.equals(block)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /*------------------------------------------------------------------others---------------------------------------------------------------------------*/
     public void showSnackBar(final String message) {
@@ -1630,5 +2278,4 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         AlertDialog alert = builder.create();
         alert.show();
     }
-
 }

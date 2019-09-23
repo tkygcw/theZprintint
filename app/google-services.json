@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "849227598186",
+    "firebase_url": "https://thez-printing.firebaseio.com",
+    "project_id": "thez-printing",
+    "storage_bucket": "thez-printing.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:849227598186:android:cff5dc0e84f347cf2cbd13",
+        "android_client_info": {
+          "package_name": "com.jby.thezprinting"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "849227598186-hkdgli60th7is7l4tb0qjduh1ln46h6j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jby.thezprinting",
+            "certificate_hash": "cd2a2e4f63f8e0bb6c260e099aeb746c4d2ee61b"
+          }
+        },
+        {
+          "client_id": "849227598186-mqtod1rig9f1cetomghuh489g816pusu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIx652iTsAezIkWNqgQ9BrU82cuJUDpAw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "849227598186-mqtod1rig9f1cetomghuh489g816pusu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -3,8 +3,8 @@ package com.jby.thezprinting.object;
 import java.io.Serializable;
 
 public class DocumentObject implements Serializable {
-    private String documentID, documentDetailID;
-    private String item, price, quantity, subTotal, date, target, status, personInCharge;
+    private String documentID, documentNo, documentDetailID;
+    private String item, price, quantity, subTotal, date, customer, status, personInCharge, deposit;
 
     public DocumentObject() {
     }
@@ -12,18 +12,20 @@ public class DocumentObject implements Serializable {
     /*
      *child list view
      * */
-    public DocumentObject(String documentID, String date, String target, String status, String personInCharge) {
+    public DocumentObject(String customer, String personInCharge, String documentID, String documentNo, String status, String date, String deposit) {
         this.documentID = documentID;
-        this.date = date;
-        this.target = target;
+        this.documentNo = documentNo;
+        this.customer = customer;
         this.status = status;
         this.personInCharge = personInCharge;
+        this.date = date;
+        this.deposit = deposit;
     }
 
     /*
      * quotataion detail
      * */
-    public DocumentObject(String documentDetailID, String item, String price, String quantity, String subTotal, String date) {
+    public DocumentObject(String documentDetailID, String item, String price, String quantity, String subTotal) {
         this.documentDetailID = documentDetailID;
         this.item = item;
         this.price = price;
@@ -32,11 +34,15 @@ public class DocumentObject implements Serializable {
     }
 
     public String getTarget() {
-        return target;
+        return customer;
     }
 
     public String getDocumentID() {
         return documentID;
+    }
+
+    public String getDocumentNo() {
+        return documentNo;
     }
 
     public String getDocumentDetailID() {
@@ -69,6 +75,10 @@ public class DocumentObject implements Serializable {
 
     public String getPersonInCharge() {
         return personInCharge;
+    }
+
+    public String getDeposit() {
+        return deposit;
     }
 
     public void setDocumentID(String documentID) {
