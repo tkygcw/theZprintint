@@ -64,7 +64,7 @@ public class CustomFirebaseMessagingService extends FirebaseMessagingService {
 
         final NotificationCompat.Builder notificationBuilder;
         notificationBuilder = new NotificationCompat.Builder(getApplicationContext(), channelId)
-                .setSmallIcon(R.mipmap.ic_launcher_round)
+                .setSmallIcon(R.mipmap.logo_round)
                 .setContentTitle(messageBody.getString("title"))
                 .setContentText(messageBody.getString("message"))
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(messageBody.getString("message")))

@@ -90,6 +90,7 @@ import com.jby.thezprinting.sharePreference.SharedPreferenceManager;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
+import static android.view.View.GONE;
 import static com.itextpdf.text.html.WebColors.getRGBColor;
 import static com.jby.thezprinting.shareObject.CustomToast.CustomToast;
 import static com.jby.thezprinting.shareObject.VariableUtils.REQUEST_UPDATE;
@@ -244,6 +245,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             intentAction = getIntent().getExtras().getString("action");
             intentType = getIntent().getExtras().getString("type");
             actionButton.setText(intentType.equals("quotation") ? "Upload Quotation" : "Upload Invoice");
+            depositButton.setVisibility(intentType.equals("quotation") ? View.GONE : View.VISIBLE);
             /*
              * edit
              * */
@@ -357,7 +359,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
     /*-------------------------------------------------------------------------create purpose---------------------------------------------------------------------*/
     private void setCreateLayout() {
-        status.setVisibility(View.GONE);
+        status.setVisibility(GONE);
         setCurrentTime();
     }
 
@@ -484,9 +486,9 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             public void run() {
                 if (documentObjectArrayList.size() > 0) {
                     listView.setVisibility(View.VISIBLE);
-                    no_item_layout.setVisibility(View.GONE);
+                    no_item_layout.setVisibility(GONE);
                 } else {
-                    listView.setVisibility(View.GONE);
+                    listView.setVisibility(GONE);
                     no_item_layout.setVisibility(View.VISIBLE);
                 }
             }
@@ -497,7 +499,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+                progressBar.setVisibility(show ? View.VISIBLE : GONE);
 
             }
         });
@@ -582,7 +584,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
-        toolbar.setVisibility(View.GONE);
+        toolbar.setVisibility(GONE);
         actionMode.getMenuInflater().inflate(R.menu.delete_action_bar, menu);
         return true;
     }
@@ -1257,7 +1259,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                 for (int i = 0; i < documentObjectArrayList.size(); i++) {
                     totalPrice = totalPrice + Float.valueOf(documentObjectArrayList.get(i).getSubTotal());
                 }
-                totalLayout.setVisibility(totalPrice > 0 ? View.VISIBLE : View.GONE);
+                totalLayout.setVisibility(totalPrice > 0 ? View.VISIBLE : GONE);
                 total.setText(String.format("RM%s", totalPrice > 0 ? String.format("%.2f", totalPrice) : "0"));
                 /*
                  * count deposit
@@ -1290,10 +1292,10 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             tvDeposit.setText("RM " + String.format("%.2f", deposit));
             balance.setText("RM " + String.format("%.2f", totalPrice - deposit));
         } else {
-            depositLayout.setVisibility(View.GONE);
-            balanceLayout.setVisibility(View.GONE);
+            depositLayout.setVisibility(GONE);
+            balanceLayout.setVisibility(GONE);
         }
-        depositButton.setVisibility(intentType.equals("quotation") ? View.GONE : View.VISIBLE);
+        depositButton.setVisibility(intentType.equals("quotation") ? GONE : View.VISIBLE);
     }
 
     @Override

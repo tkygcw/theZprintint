@@ -157,6 +157,7 @@ public class InvoiceFragment extends Fragment implements ExpandableListView.OnGr
                                 @Override
                                 public void run() {
                                     try {
+                                        reset();
                                         if (jsonObjectLoginResponse.getString("status").equals("1")) {
                                             JSONArray jsonArray = jsonObjectLoginResponse.getJSONArray("parent");
                                             for (int i = 0; i < jsonArray.length(); i++) {
@@ -295,6 +296,12 @@ public class InvoiceFragment extends Fragment implements ExpandableListView.OnGr
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
+    }
+
+    /*--------------------------------------------------------------search----------------------------------------------------------------------------*/
+    public void reset() {
+        expandableParentObjectArrayList.clear();
+        notifyDataSetChanged();
     }
 
     /*--------------------------------------------------------------date----------------------------------------------------------------------------*/

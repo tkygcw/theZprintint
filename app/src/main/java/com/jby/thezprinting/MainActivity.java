@@ -304,6 +304,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         } else {
             invoiceFragment.startDate = dateStart;
             invoiceFragment.endDate = dateEnd;
+            invoiceFragment.fetchParentItem(query);
         }
     }
 }

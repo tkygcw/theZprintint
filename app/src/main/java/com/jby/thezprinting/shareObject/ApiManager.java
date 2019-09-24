@@ -10,7 +10,7 @@ public class ApiManager {
 
     private static String domain = "http://www.chafor.net/";
 //    private static String domain = "https://www.mahsing-ent.com/";
-    private static String prefix = "thezprinting/";
+    private static String prefix = "thez_printing/";
 
     public String home = domain + prefix + "home/home.php";
     public String quotation = domain + prefix + "quotation/quotation.php";
