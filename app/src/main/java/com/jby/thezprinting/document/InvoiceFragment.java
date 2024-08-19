@@ -1,6 +1,7 @@
 package com.jby.thezprinting.document;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -22,12 +23,12 @@ import com.jby.thezprinting.object.ExpandableParentObject;
 import com.jby.thezprinting.shareObject.ApiDataObject;
 import com.jby.thezprinting.shareObject.ApiManager;
 import com.jby.thezprinting.shareObject.AsyncTaskManager;
+import com.jby.thezprinting.sharePreference.SharedPreferenceManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
@@ -59,6 +60,7 @@ public class InvoiceFragment extends Fragment implements ExpandableListView.OnGr
     AsyncTaskManager asyncTaskManager;
     JSONObject jsonObjectLoginResponse;
     ArrayList<ApiDataObject> apiDataObjectArrayList;
+    Handler handler;
     /*
      * sorting purpose
      * */
@@ -100,6 +102,7 @@ public class InvoiceFragment extends Fragment implements ExpandableListView.OnGr
 
         startDate = getDate(true);
         endDate = getDate(false);
+        handler = new Handler();
     }
 
     private void objectSetting() {
@@ -133,6 +136,7 @@ public class InvoiceFragment extends Fragment implements ExpandableListView.OnGr
             public void run() {
                 apiDataObjectArrayList = new ArrayList<>();
                 apiDataObjectArrayList.add(new ApiDataObject("read_parent", "1"));
+                apiDataObjectArrayList.add(new ApiDataObject("company_id", SharedPreferenceManager.getCompanyId(getActivity())));
                 apiDataObjectArrayList.add(new ApiDataObject("query", query));
                 apiDataObjectArrayList.add(new ApiDataObject("start_date", startDate));
                 apiDataObjectArrayList.add(new ApiDataObject("end_date", endDate));
@@ -250,13 +254,22 @@ public class InvoiceFragment extends Fragment implements ExpandableListView.OnGr
     }
 
     @Override
-    public boolean onChildClick(ExpandableListView expandableListView, View view, int i, int i1, long l) {
+    public boolean onChildClick(final ExpandableListView expandableListView, final View view, int i, int i1, long l) {
+        expandableListView.setEnabled(false);
+
         Bundle bundle = new Bundle();
-        bundle.putSerializable("object", (Serializable) expandableParentObjectArrayList.get(i).getDocumentObjectArrayList().get(i1));
+        bundle.putSerializable("object", expandableParentObjectArrayList.get(i).getDocumentObjectArrayList().get(i1));
         bundle.putString("created_at", expandableParentObjectArrayList.get(i).getDate());
         bundle.putString("action", "edit");
         bundle.putString("type", "invoice");
         openDetailActivity(bundle);
+
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                expandableListView.setEnabled(true);
+            }
+        },500);
         return false;
     }
 
@@ -310,6 +323,6 @@ public class InvoiceFragment extends Fragment implements ExpandableListView.OnGr
         int year = calendar.get(Calendar.YEAR);
         int month = calendar.get(Calendar.MONTH);
         int day = (from ? calendar.getActualMinimum(Calendar.DATE) : calendar.get(Calendar.DAY_OF_MONTH));
-        return year + "-" + String.format(Locale.getDefault(), "%02d", (month + 1)) + "-" + String.format(Locale.getDefault(), "%02d", day);
+        return year + "-" + String.format(Locale.getDefault(), "%02d", (month + (from ? 0 : 1))) + "-" + String.format(Locale.getDefault(), "%02d", day);
     }
 }

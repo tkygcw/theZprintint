@@ -169,7 +169,7 @@ public class FrameworkClass {
                 crs.close();
 
             } catch (SQLException e) {
-                CustomToast(context, "Invalid Parameter!");
+                CustomToast(context, "Invalid Parameter! " + e);
             }
             return count;
         }

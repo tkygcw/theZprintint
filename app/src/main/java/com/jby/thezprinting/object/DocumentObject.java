@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class DocumentObject implements Serializable {
     private String documentID, documentNo, documentDetailID;
-    private String item, price, quantity, subTotal, date, customer, status, personInCharge, deposit;
+    private String item, price, quantity, subTotal, date, customer, status, personInCharge, deposit, description;
 
     public DocumentObject() {
     }
@@ -25,9 +25,10 @@ public class DocumentObject implements Serializable {
     /*
      * quotataion detail
      * */
-    public DocumentObject(String documentDetailID, String item, String price, String quantity, String subTotal) {
+    public DocumentObject(String documentDetailID, String item, String description, String price, String quantity, String subTotal) {
         this.documentDetailID = documentDetailID;
         this.item = item;
+        this.description = description;
         this.price = price;
         this.quantity = quantity;
         this.subTotal = subTotal;
@@ -81,7 +82,15 @@ public class DocumentObject implements Serializable {
         return deposit;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     public void setDocumentID(String documentID) {
         this.documentID = documentID;
+    }
+
+    public void setDocumentNo(String documentNo) {
+        this.documentNo = documentNo;
     }
 }

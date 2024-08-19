@@ -129,7 +129,7 @@ public class PrintOptionDialog extends DialogFragment implements View.OnClickLis
         switch (view.getId()) {
             case R.id.print_button:
                 try {
-                    printOptionDialogCallBack.printOption(
+                    printOptionDialogCallBack.getCompanyDetailToPrint(
                             autoSpacing.isChecked(),
                             artworkProvided.isChecked(),
                             autoSpacing.isChecked() ? 0 : Integer.valueOf(customSpacing.getText().toString().trim()),
@@ -162,6 +162,6 @@ public class PrintOptionDialog extends DialogFragment implements View.OnClickLis
     }
 
     public interface PrintOptionDialogCallBack {
-        void printOption(boolean autoSpacing, boolean artworkProvided, int customSpacing, String currency, double rate);
+        void getCompanyDetailToPrint(boolean autoSpacing, boolean artworkProvided, int customSpacing, String currency, double rate);
     }
 }

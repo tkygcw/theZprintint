@@ -26,13 +26,16 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.jby.thezprinting.R;
-import com.jby.thezprinting.adapter.SupplierAdapter;
+import com.jby.thezprinting.adapter.ProductAdapter;
 import com.jby.thezprinting.database.CustomSqliteHelper;
 import com.jby.thezprinting.database.FrameworkClass;
 import com.jby.thezprinting.database.ResultCallBack;
-import com.jby.thezprinting.object.SupplierObject;
+import com.jby.thezprinting.object.DocumentObject;
+import com.jby.thezprinting.object.ProductObject;
+import com.jby.thezprinting.object.ProductObject;
 import com.jby.thezprinting.others.ExpandableHeightListView;
 import com.jby.thezprinting.others.SwipeDismissTouchListener;
 import com.jby.thezprinting.shareObject.ApiDataObject;
@@ -52,34 +55,34 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.jby.thezprinting.database.CustomSqliteHelper.TB_DEFAULT_CUSTOMER;
-import static com.jby.thezprinting.database.CustomSqliteHelper.TB_DEFAULT_SUPPLIER;
+import static com.jby.thezprinting.database.CustomSqliteHelper.TB_DEFAULT_PRODUCT;
 import static com.jby.thezprinting.shareObject.CustomToast.CustomToast;
 
 
-public class SupplierDialog extends DialogFragment implements SearchView.OnQueryTextListener, AdapterView.OnItemClickListener,
-        ResultCallBack, View.OnClickListener, AbsListView.MultiChoiceModeListener, SupplierAdapter.SupplierAdapterCallBack {
+public class ProductDialog extends DialogFragment implements SearchView.OnQueryTextListener, AdapterView.OnItemClickListener,
+        ResultCallBack, View.OnClickListener, AbsListView.MultiChoiceModeListener {
     View rootView;
-    private ExpandableHeightListView supplierList;
-    private ArrayList<SupplierObject> supplierObjectArrayList;
-    private SupplierAdapter supplierAdapter;
+    private ExpandableHeightListView productList;
+    private ArrayList<ProductObject> productObjectArrayList;
+    private ProductAdapter productAdapter;
     /*
-     * display layout supplier
+     * display layout product
      * */
     private LinearLayout displayParentLayout;
     private Button addNewButton;
 
-    private TextView labelFavouriteSupplier;
-    private LinearLayout supplierNotFoundLayout;
+    private TextView labelFavouriteProduct;
+    private LinearLayout productNotFoundLayout;
 
-    private ExpandableHeightListView favouriteSupplierList;
-    private ArrayList<SupplierObject> favouriteSupplierArrayList;
-    private SupplierAdapter favouriteSupplierAdapter;
+    private ExpandableHeightListView favouriteProductList;
+    private ArrayList<ProductObject> favouriteProductArrayList;
+    private ProductAdapter favouriteProductAdapter;
     /*
-     * add layout supplier
+     * add layout product
      * */
     private LinearLayout addParentLayout;
-    private EditText supplier, supplierAddress, supplierContact, supplierWebsite, supplierEmail;
-    private Button addButton, cancelAddButton;
+    private EditText product, productPrice, productDescription, productQuantity;
+    private Button addButton, updateButton, cancelAddButton;
 
     private FrameworkClass frameworkClass;
 
@@ -98,26 +101,31 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
      * update control
      * */
     private boolean isUpdate = false;
-    private String supplierID = "";
-
+    private String productID = "";
     /*
      * search
      * */
-    private SearchView supplierDialogSearch;
+    private SearchView productDialogSearch;
     private String query = "";
     /*
      * activity control purpose
      * */
+    boolean isMainActivity = false;
+    boolean isListUpdate = false;
+    /*
+     * object
+     * */
+    private ProductObject productObject;
 
-    public SupplierDialogCallBack supplierDialogCallBack;
+    public ProductDialogCallBack productDialogCallBack;
 
-    public SupplierDialog() {
+    public ProductDialog() {
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        rootView = inflater.inflate(R.layout.supplier_dialog, container);
+        rootView = inflater.inflate(R.layout.product_dialog, container);
         objectInitialize();
         objectSetting();
         return rootView;
@@ -127,35 +135,35 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
         /*
          * display layout
          * */
-        displayParentLayout = rootView.findViewById(R.id.display_supplier_layout);
+        displayParentLayout = rootView.findViewById(R.id.display_product_layout);
         addNewButton = rootView.findViewById(R.id.add_new_button);
 
-        supplierDialogSearch = rootView.findViewById(R.id.supplier_dialog_search);
-        supplierList = rootView.findViewById(R.id.supplier_dialog_supplier_list);
+        productDialogSearch = rootView.findViewById(R.id.product_dialog_search);
+        productList = rootView.findViewById(R.id.product_dialog_product_list);
 
-        labelFavouriteSupplier = rootView.findViewById(R.id.supplier_dialog_label_recent_choose);
-        favouriteSupplierList = rootView.findViewById(R.id.supplier_dialog_favourite_supplier_list);
+        labelFavouriteProduct = rootView.findViewById(R.id.product_dialog_label_recent_choose);
+        favouriteProductList = rootView.findViewById(R.id.product_dialog_favourite_product_list);
 
         /*
-         * add supplier layout
+         * add product layout
          * */
-        addParentLayout = rootView.findViewById(R.id.add_supplier_layout);
+        addParentLayout = rootView.findViewById(R.id.add_product_layout);
         addButton = rootView.findViewById(R.id.add_button);
+        updateButton = rootView.findViewById(R.id.update_button);
         cancelAddButton = rootView.findViewById(R.id.back_button);
 
-        supplier = rootView.findViewById(R.id.supplier);
-        supplierAddress = rootView.findViewById(R.id.address);
-        supplierContact = rootView.findViewById(R.id.contact);
-        supplierEmail = rootView.findViewById(R.id.email);
-        supplierWebsite = rootView.findViewById(R.id.website);
+        product = rootView.findViewById(R.id.item);
+        productDescription = rootView.findViewById(R.id.itemDescription);
+        productQuantity = rootView.findViewById(R.id.quantity);
+        productPrice = rootView.findViewById(R.id.price);
 
-        favouriteSupplierArrayList = new ArrayList<>();
-        supplierObjectArrayList = new ArrayList<>();
+        favouriteProductArrayList = new ArrayList<>();
+        productObjectArrayList = new ArrayList<>();
 
-        supplierAdapter = new SupplierAdapter(getActivity(), supplierObjectArrayList, true, this);
-        favouriteSupplierAdapter = new SupplierAdapter(getActivity(), favouriteSupplierArrayList, false, this);
+        productAdapter = new ProductAdapter(getActivity(), productObjectArrayList, true);
+        favouriteProductAdapter = new ProductAdapter(getActivity(), favouriteProductArrayList, false);
 
-        supplierNotFoundLayout = rootView.findViewById(R.id.supplier_not_found_layout);
+        productNotFoundLayout = rootView.findViewById(R.id.product_not_found_layout);
 
         handler = new Handler();
 
@@ -164,52 +172,71 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
     private void objectSetting() {
         Bundle bundle = getArguments();
         if (bundle != null) {
-            boolean isMainActivity = bundle.getBoolean("isMainActivity");
+            isMainActivity = bundle.getBoolean("isMainActivity");
+            isListUpdate = bundle.getBoolean("isUpdateList");
             /*
              * if not main activity then initialize these things
              * */
             if (!isMainActivity) {
-                try {
-                    supplierDialogCallBack = (SupplierDialogCallBack) getActivity();
-
-                } catch (ClassCastException e) {
-                    supplierDialogCallBack = (SupplierDialogCallBack) getParentFragment();
-
+                productDialogCallBack = (ProductDialogCallBack) getActivity();
+                /*
+                 * update list from activity detail
+                 * */
+                if (isListUpdate) {
+                    editProduct((ProductObject) Objects.requireNonNull(bundle.getSerializable("updateObject")));
+                } else {
+                    productList.setOnItemClickListener(this);
+                    favouriteProductList.setOnItemClickListener(this);
+                    /*
+                     * show product list rather than add page
+                     * */
+                    showAddProductLayout(false);
                 }
-                supplierList.setOnItemClickListener(this);
-                favouriteSupplierList.setOnItemClickListener(this);
+            } else {
+                /*
+                * hide quantity layout when open from main activity
+                * */
+                rootView.findViewById(R.id.layout_quantity).setVisibility(View.GONE);
+
+                productList.setOnItemClickListener(this);
+                /*
+                 * show product list rather than add page
+                 * */
+                showAddProductLayout(false);
             }
         }
         cancelAddButton.setOnClickListener(this);
         addButton.setOnClickListener(this);
+        updateButton.setOnClickListener(this);
         addNewButton.setOnClickListener(this);
 
-        supplierList.setAdapter(supplierAdapter);
-        supplierList.setExpanded(true);
-        supplierList.setMultiChoiceModeListener(this);
-        supplierList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+        productList.setAdapter(productAdapter);
+        productList.setExpanded(true);
+        productList.setMultiChoiceModeListener(this);
+        productList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
 
 
-        favouriteSupplierList.setAdapter(favouriteSupplierAdapter);
-        favouriteSupplierList.setExpanded(true);
+        favouriteProductList.setAdapter(favouriteProductAdapter);
+        favouriteProductList.setExpanded(true);
 
-        supplierDialogSearch.setOnQueryTextListener(this);
+        productDialogSearch.setOnQueryTextListener(this);
 
-        frameworkClass = new FrameworkClass(getActivity(), this, new CustomSqliteHelper(getActivity()), TB_DEFAULT_SUPPLIER);
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                frameworkClass.new Read("*").where("company_id =" + SharedPreferenceManager.getCompanyId(getActivity())).orderByDesc("supplier_id").perform();
-            }
-        }, 200);
-        fetchCustomer(query);
+        frameworkClass = new FrameworkClass(getActivity(), this, new CustomSqliteHelper(getActivity()), TB_DEFAULT_PRODUCT);
         /*
-         * show display supplier layout
+         * if not update then fetch product list
          * */
-        showAddCustomerLayout(false);
+        if (!isListUpdate) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    frameworkClass.new Read("*").where("company_id =" + SharedPreferenceManager.getCompanyId(getActivity())).orderByDesc("product_id").perform();
+                    fetchProduct(query);
+                }
+            }, 200);
+        }
     }
 
-    private void fetchCustomer(final String query) {
+    private void fetchProduct(final String query) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -220,7 +247,7 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
                 apiDataObjectArrayList.add(new ApiDataObject("query", query));
                 asyncTaskManager = new AsyncTaskManager(
                         getActivity(),
-                        new ApiManager().supplier,
+                        new ApiManager().product,
                         new ApiManager().getResultParameter(
                                 "",
                                 new ApiManager().setData(apiDataObjectArrayList),
@@ -236,19 +263,32 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
 
                         if (jsonObjectLoginResponse != null) {
                             Log.d("jsonObject", "jsonObject: haha " + jsonObjectLoginResponse);
-                            if (jsonObjectLoginResponse.getString("status").equals("1")) {
-                                JSONArray jsonArray = jsonObjectLoginResponse.getJSONArray("supplier");
-                                for (int i = 0; i < jsonArray.length(); i++) {
-                                    supplierObjectArrayList.add(new SupplierObject(
-                                            jsonArray.getJSONObject(i).getString("supplier_id"),
-                                            jsonArray.getJSONObject(i).getString("name"),
-                                            jsonArray.getJSONObject(i).getString("address"),
-                                            jsonArray.getJSONObject(i).getString("email"),
-                                            jsonArray.getJSONObject(i).getString("contact"),
-                                            jsonArray.getJSONObject(i).getString("website")));
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    reset();
+                                    try {
+                                        if (jsonObjectLoginResponse.getString("status").equals("1")) {
+                                            JSONArray jsonArray;
+                                            try {
+                                                jsonArray = jsonObjectLoginResponse.getJSONArray("product");
+                                                for (int i = 0; i < jsonArray.length(); i++) {
+                                                    productObjectArrayList.add(new ProductObject(
+                                                            jsonArray.getJSONObject(i).getString("product_id"),
+                                                            jsonArray.getJSONObject(i).getString("name"),
+                                                            jsonArray.getJSONObject(i).getString("price"),
+                                                            jsonArray.getJSONObject(i).getString("description")));
+                                                }
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    setUpVisibility();
                                 }
-                                setUpVisibility();
-                            }
+                            });
                         } else {
                             CustomToast(getActivity(), "Network Error!");
                         }
@@ -257,9 +297,6 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
                         e.printStackTrace();
                     } catch (ExecutionException e) {
                         CustomToast(getActivity(), "Execution Exception!");
-                        e.printStackTrace();
-                    } catch (JSONException e) {
-                        CustomToast(getActivity(), "JSON Exception!");
                         e.printStackTrace();
                     } catch (TimeoutException e) {
                         CustomToast(getActivity(), "Connection Time Out!");
@@ -272,27 +309,35 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
     }
 
     private void notifyDataSetChanged() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                supplierAdapter.notifyDataSetChanged();
-            }
-        });
+        try {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    productAdapter.notifyDataSetChanged();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void setUpVisibility() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (supplierObjectArrayList.size() > 0) {
-                    supplierList.setVisibility(View.VISIBLE);
-                    supplierNotFoundLayout.setVisibility(View.GONE);
-                } else {
-                    supplierList.setVisibility(View.GONE);
-                    supplierNotFoundLayout.setVisibility(View.VISIBLE);
+        try {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (productObjectArrayList.size() > 0) {
+                        productList.setVisibility(View.VISIBLE);
+                        productNotFoundLayout.setVisibility(View.GONE);
+                    } else {
+                        productList.setVisibility(View.GONE);
+                        productNotFoundLayout.setVisibility(View.VISIBLE);
+                    }
                 }
-            }
-        });
+            });
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -333,70 +378,46 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
     }
 
     @Override
-    public boolean onQueryTextChange(String query) {
+    public boolean onQueryTextChange(final String query) {
         //hide favourite list
         if (query.length() > 0) hide(true);
         else hide(false);
-        /*
-         * reset
-         * */
-        reset();
-
         this.query = query;
-        fetchCustomer(query);
+        fetchProduct(query);
         return false;
     }
 
     private void hide(boolean hide) {
         if (hide) {
-            favouriteSupplierList.setVisibility(View.GONE);
-            labelFavouriteSupplier.setVisibility(View.GONE);
+            favouriteProductList.setVisibility(View.GONE);
+            labelFavouriteProduct.setVisibility(View.GONE);
         } else {
-            favouriteSupplierList.setVisibility(View.VISIBLE);
-            labelFavouriteSupplier.setVisibility(View.VISIBLE);
+            favouriteProductList.setVisibility(View.VISIBLE);
+            labelFavouriteProduct.setVisibility(View.VISIBLE);
         }
     }
 
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-        switch (adapterView.getId()) {
-            case R.id.supplier_dialog_favourite_supplier_list:
-                supplierDialogCallBack.selectedItem(favouriteSupplierArrayList.get(i));
-                /*
-                 * store value into favourite list
-                 * */
-                frameworkClass.new create("supplier_id, name, address, email, contact, website, company_id",
-                        new String[]{
-                                favouriteSupplierArrayList.get(i).getSupplier_id(),
-                                favouriteSupplierArrayList.get(i).getName(),
-                                favouriteSupplierArrayList.get(i).getAddress(),
-                                favouriteSupplierArrayList.get(i).getEmail(),
-                                favouriteSupplierArrayList.get(i).getContact(),
-                                favouriteSupplierArrayList.get(i).getWebsite(),
-                                SharedPreferenceManager.getCompanyId(getActivity())
-                        }).perform();
-                break;
-            case R.id.supplier_dialog_supplier_list:
-                supplierDialogCallBack.selectedItem(supplierObjectArrayList.get(i));
-                /*
-                 * store value into favourite list
-                 * */
-                frameworkClass.new create("supplier_id, name, address, email, contact, website, company_id",
-                        new String[]{
-                                supplierObjectArrayList.get(i).getSupplier_id(),
-                                supplierObjectArrayList.get(i).getName(),
-                                supplierObjectArrayList.get(i).getAddress(),
-                                supplierObjectArrayList.get(i).getEmail(),
-                                supplierObjectArrayList.get(i).getContact(),
-                                supplierObjectArrayList.get(i).getWebsite(),
-                                SharedPreferenceManager.getCompanyId(getActivity())
-                        }).perform();
-                break;
-        }
-        dismiss();
+        showAddProductLayout(true);
+        //hide add button when it's onclick from main activity
+        showAddButton(!isMainActivity);
+
+        editProduct(adapterView.getId() == R.id.product_dialog_favourite_product_list ? favouriteProductArrayList.get(i) : productObjectArrayList.get(i));
     }
 
     /*-------------------------------------------------------local database control----------------------------------------------------------------------------------*/
+    private void addToCache(ProductObject productObject) {
+        frameworkClass.new create("product_id, name, price, description, company_id",
+                new String[]{
+                        productObject.getProduct_id(),
+                        productObject.getName(),
+                        productObject.getPrice(),
+                        productObject.getDescription(),
+                        SharedPreferenceManager.getCompanyId(getActivity())
+                }).perform();
+    }
+
     @Override
     public void createResult(String status) {
 
@@ -411,35 +432,31 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
             JSONArray jsonArray = jsonObject.getJSONArray("result");
 
             for (int i = 0; i < jsonArray.length(); i++) {
-                if (favouriteSupplierArrayList.size() < 3) {
+                if (favouriteProductArrayList.size() < 3) {
                     Log.d("haha", "haha: big loop");
-                    //add item into favouriteSupplierList when size = 0
-                    if (favouriteSupplierArrayList.size() <= 0) {
-                        favouriteSupplierArrayList.add(new SupplierObject(
-                                jsonArray.getJSONObject(i).getString("supplier_id"),
+                    //add item into favouriteProductArrayList when size = 0
+                    if (favouriteProductArrayList.size() <= 0) {
+                        favouriteProductArrayList.add(new ProductObject(
+                                jsonArray.getJSONObject(i).getString("product_id"),
                                 jsonArray.getJSONObject(i).getString("name"),
-                                jsonArray.getJSONObject(i).getString("address"),
-                                jsonArray.getJSONObject(i).getString("email"),
-                                jsonArray.getJSONObject(i).getString("contact"),
-                                jsonArray.getJSONObject(i).getString("website")
+                                jsonArray.getJSONObject(i).getString("price"),
+                                jsonArray.getJSONObject(i).getString("description")
                         ));
                     }
-                    //favouriteSupplierList.size > 0
+                    //favouriteProductArrayList.size > 0
                     else {
                         //check repeat values
-                        for (int j = 0; j < favouriteSupplierArrayList.size(); j++) {
-                            if (!favouriteSupplierArrayList.get(j).getName().equals(jsonArray.getJSONObject(i).getString("name")))
+                        for (int j = 0; j < favouriteProductArrayList.size(); j++) {
+                            if (!favouriteProductArrayList.get(j).getName().equals(jsonArray.getJSONObject(i).getString("name")))
                                 count++;
                         }
                         //if count == favourite.size() mean that one is new item
-                        if (count == favouriteSupplierArrayList.size())
-                            favouriteSupplierArrayList.add(new SupplierObject(
-                                    jsonArray.getJSONObject(i).getString("supplier_id"),
+                        if (count == favouriteProductArrayList.size())
+                            favouriteProductArrayList.add(new ProductObject(
+                                    jsonArray.getJSONObject(i).getString("product_id"),
                                     jsonArray.getJSONObject(i).getString("name"),
-                                    jsonArray.getJSONObject(i).getString("address"),
-                                    jsonArray.getJSONObject(i).getString("email"),
-                                    jsonArray.getJSONObject(i).getString("contact"),
-                                    jsonArray.getJSONObject(i).getString("website")
+                                    jsonArray.getJSONObject(i).getString("price"),
+                                    jsonArray.getJSONObject(i).getString("description")
                             ));
                         count = 0;
                     }
@@ -448,9 +465,9 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        favouriteSupplierAdapter.notifyDataSetChanged();
-        if (favouriteSupplierArrayList.size() <= 0)
-            labelFavouriteSupplier.setVisibility(View.GONE);
+        favouriteProductAdapter.notifyDataSetChanged();
+        if (favouriteProductArrayList.size() <= 0)
+            labelFavouriteProduct.setVisibility(View.GONE);
     }
 
     @Override
@@ -467,59 +484,95 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.add_new_button:
-                showAddCustomerLayout(true);
+                showAddProductLayout(true);
+                showAddButton(true);
                 break;
             case R.id.add_button:
                 checkingInput(isUpdate);
                 break;
+            case R.id.update_button:
+                checkingUpdateInput();
+                break;
             case R.id.back_button:
-                showAddCustomerLayout(false);
+                if (isListUpdate) dismiss();
+                else showAddProductLayout(false);
                 break;
         }
     }
 
     /*-------------------------------------------------------------add / display layout control-----------------------------------------------------------------*/
-    private void showAddCustomerLayout(boolean show) {
+    private void showAddProductLayout(boolean show) {
         addParentLayout.setVisibility(show ? View.VISIBLE : View.GONE);
-
         displayParentLayout.setVisibility(!show ? View.VISIBLE : View.GONE);
-        supplierDialogSearch.setVisibility(!show ? View.VISIBLE : View.GONE);
+        productDialogSearch.setVisibility(!show ? View.VISIBLE : View.GONE);
+        /*
+        * button control
+        * */
+        updateButton.setVisibility(!show ? View.VISIBLE : View.GONE);
+        //change text when open from main activity
+        updateButton.setText(isMainActivity ? "Update Item" :  "Update & ADD");
 
-        supplier.setText("");
-        supplierAddress.setText("");
-        supplierContact.setText("");
-        supplierEmail.setText("");
-        supplierWebsite.setText("");
+        product.setText("");
+        productPrice.setText("");
+        productDescription.setText("");
+        productQuantity.setText("");
 
         isUpdate = false;
     }
 
+    private void showAddButton(boolean show){
+        addButton.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
     /*-----------------------------------------------------------------create delete update----------------------------------------------------------------------------------*/
     private void checkingInput(boolean isUpdate) {
-        if (!supplier.getText().toString().equals("")) {
-            if (!isUpdate) storeSupplier();
-            else updateSupplier();
+        //create new purpose
+        if (!isUpdate) {
+            if (!product.getText().toString().equals("")) {
+                storeProduct();
+            } else {
+                CustomToast(getActivity(), "Name is required!");
+            }
+        } else {
+            if (!product.getText().toString().equals("") && !productQuantity.getText().toString().equals("") && !productPrice.getText().toString().equals("")) {
+                productDialogCallBack.selectedProduct(new DocumentObject(productObject.getProduct_id(), product.getText().toString(), productDescription.getText().toString(), productPrice.getText().toString(), productQuantity.getText().toString(), subTotal()));
+                addToCache(productObject);
+                dismiss();
+            } else {
+                CustomToast(getActivity(), "Name, Quantity, Price is required!");
+            }
+        }
+    }
+
+    private void checkingUpdateInput() {
+        if (!product.getText().toString().equals("")) {
+            updateProduct();
         } else {
             CustomToast(getActivity(), "Name is required!");
         }
     }
 
-    private void storeSupplier() {
+    private String subTotal() {
+        float price = Float.parseFloat(productPrice.getText().toString());
+        String quantity = productQuantity.getText().toString();
+        float subTotal = price * Float.parseFloat(quantity);
+        return String.format("%.2f", subTotal);
+    }
+
+    private void storeProduct() {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 apiDataObjectArrayList = new ArrayList<>();
                 apiDataObjectArrayList.add(new ApiDataObject("create", "1"));
-                apiDataObjectArrayList.add(new ApiDataObject("name", supplier.getText().toString()));
-                apiDataObjectArrayList.add(new ApiDataObject("address", supplierAddress.getText().toString()));
-                apiDataObjectArrayList.add(new ApiDataObject("contact", supplierContact.getText().toString()));
-                apiDataObjectArrayList.add(new ApiDataObject("website", supplierWebsite.getText().toString()));
-                apiDataObjectArrayList.add(new ApiDataObject("email", supplierEmail.getText().toString()));
+                apiDataObjectArrayList.add(new ApiDataObject("name", product.getText().toString()));
+                apiDataObjectArrayList.add(new ApiDataObject("description", productDescription.getText().toString()));
+                apiDataObjectArrayList.add(new ApiDataObject("price", productPrice.getText().toString()));
                 apiDataObjectArrayList.add(new ApiDataObject("company_id", SharedPreferenceManager.getCompanyId(getActivity())));
 
                 asyncTaskManager = new AsyncTaskManager(
                         getActivity(),
-                        new ApiManager().supplier,
+                        new ApiManager().product,
                         new ApiManager().getResultParameter(
                                 "",
                                 new ApiManager().setData(apiDataObjectArrayList),
@@ -540,9 +593,27 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
                                     @Override
                                     public void run() {
                                         CustomToast(getActivity(), "Store Successfully!");
-                                        reset();
-                                        fetchCustomer(query);
-                                        showAddCustomerLayout(false);
+                                        /*
+                                         * store to cloud only
+                                         * */
+                                        if (isMainActivity) {
+                                            reset();
+                                            fetchProduct(query);
+                                            showAddProductLayout(false);
+                                        }
+                                        /*
+                                         * after store item to cloud then add into list
+                                         * */
+                                        else {
+                                            try {
+                                                productDialogCallBack.selectedProduct(new DocumentObject(jsonObjectLoginResponse.getString("product_id"), product.getText().toString(), productDescription.getText().toString(), productPrice.getText().toString(), productQuantity.getText().toString(), subTotal()));
+                                                addToCache(new ProductObject(jsonObjectLoginResponse.getString("product_id"), product.getText().toString(), productPrice.getText().toString(), productDescription.getText().toString()));
+                                                dismiss();
+                                            } catch (JSONException e) {
+                                                CustomToast(getActivity(), "Unable to add item!");
+                                                e.printStackTrace();
+                                            }
+                                        }
                                     }
                                 });
                             }
@@ -568,17 +639,17 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
         }).start();
     }
 
-    private void deleteSupplier() {
+    private void deleteProduct() {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 apiDataObjectArrayList = new ArrayList<>();
                 apiDataObjectArrayList.add(new ApiDataObject("delete", "1"));
-                apiDataObjectArrayList.add(new ApiDataObject("supplier_id", TextUtils.join(", ", getSelectedItem())));
+                apiDataObjectArrayList.add(new ApiDataObject("product_id", TextUtils.join(", ", getSelectedItem())));
 
                 asyncTaskManager = new AsyncTaskManager(
                         getActivity(),
-                        new ApiManager().supplier,
+                        new ApiManager().product,
                         new ApiManager().getResultParameter(
                                 "",
                                 new ApiManager().setData(apiDataObjectArrayList),
@@ -625,22 +696,20 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
         }).start();
     }
 
-    private void updateSupplier() {
+    private void updateProduct() {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 apiDataObjectArrayList = new ArrayList<>();
-                apiDataObjectArrayList.add(new ApiDataObject("supplier_id", supplierID));
-                apiDataObjectArrayList.add(new ApiDataObject("name", supplier.getText().toString()));
-                apiDataObjectArrayList.add(new ApiDataObject("address", supplierAddress.getText().toString()));
-                apiDataObjectArrayList.add(new ApiDataObject("contact", supplierContact.getText().toString()));
-                apiDataObjectArrayList.add(new ApiDataObject("website", supplierWebsite.getText().toString()));
-                apiDataObjectArrayList.add(new ApiDataObject("email", supplierEmail.getText().toString()));
+                apiDataObjectArrayList.add(new ApiDataObject("product_id", productID));
+                apiDataObjectArrayList.add(new ApiDataObject("name", product.getText().toString()));
+                apiDataObjectArrayList.add(new ApiDataObject("description", productDescription.getText().toString()));
+                apiDataObjectArrayList.add(new ApiDataObject("price", productPrice.getText().toString()));
                 apiDataObjectArrayList.add(new ApiDataObject("update", "1"));
 
                 asyncTaskManager = new AsyncTaskManager(
                         getActivity(),
-                        new ApiManager().supplier,
+                        new ApiManager().product,
                         new ApiManager().getResultParameter(
                                 "",
                                 new ApiManager().setData(apiDataObjectArrayList),
@@ -661,9 +730,22 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
                                     @Override
                                     public void run() {
                                         CustomToast(getActivity(), "Update Successfully!");
-                                        reset();
-                                        showAddCustomerLayout(false);
-                                        fetchCustomer(query);
+                                        /*
+                                         * update item from cloud only
+                                         * */
+                                        if (isMainActivity) {
+                                            reset();
+                                            showAddProductLayout(false);
+                                            fetchProduct(query);
+                                        }
+                                        /*
+                                         * after update then store into list
+                                         * */
+                                        else {
+                                            productDialogCallBack.selectedProduct(new DocumentObject(productID, product.getText().toString(), productDescription.getText().toString(), productPrice.getText().toString(), productQuantity.getText().toString(), subTotal()));
+                                            addToCache(new ProductObject(productID, product.getText().toString(), productPrice.getText().toString(), productDescription.getText().toString()));
+                                            dismiss();
+                                        }
                                     }
                                 });
                             }
@@ -690,20 +772,20 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
     }
 
     private void reset() {
-        supplierObjectArrayList.clear();
+        productObjectArrayList.clear();
         notifyDataSetChanged();
     }
 
     /*---------------------------------------------------------------multiple delete------------------------------------------------------------------*/
     @Override
     public void onItemCheckedStateChanged(ActionMode actionMode, int position, long l, boolean b) {
-        final int checkDeleteItemCount = supplierList.getCheckedItemCount();
+        final int checkDeleteItemCount = productList.getCheckedItemCount();
         // Set the  CAB title according to total checkDeleteItem items
         actionMode.setTitle(checkDeleteItemCount + "  Selected");
 
         // Calls  toggleSelection method from ListViewAdapter Class
-        supplierAdapter.toggleSelection(position);
-        checkDeleteItem = supplierList.getCheckedItemPositions();
+        productAdapter.toggleSelection(position);
+        checkDeleteItem = productList.getCheckedItemPositions();
     }
 
     @Override
@@ -722,10 +804,10 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
         this.actionMode = actionMode;
         switch (menuItem.getItemId()) {
             case R.id.select_all:
-                final int checkDeleteItemCount = supplierObjectArrayList.size();
-                supplierAdapter.removeSelection();
+                final int checkDeleteItemCount = productObjectArrayList.size();
+                productAdapter.removeSelection();
                 for (int i = 0; i < checkDeleteItemCount; i++) {
-                    supplierList.setItemChecked(i, true);
+                    productList.setItemChecked(i, true);
                 }
                 actionMode.setTitle(checkDeleteItemCount + "  Selected");
                 return true;
@@ -739,14 +821,14 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
 
     @Override
     public void onDestroyActionMode(ActionMode actionMode) {
-        supplierAdapter.removeSelection();
+        productAdapter.removeSelection();
         list.clear();
     }
 
     public ArrayList<String> getSelectedItem() {
-        for (int i = 0; i < supplierList.getCount(); i++) {
+        for (int i = 0; i < productList.getCount(); i++) {
             if (checkDeleteItem.get(i)) {
-                list.add(supplierObjectArrayList.get(i).getSupplier_id());
+                list.add(productObjectArrayList.get(i).getProduct_id());
                 Log.d("haha", "haha: size: " + list.size());
             }
         }
@@ -761,9 +843,9 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
      * update list after delete successfully
      */
     private void updateListAfterDelete() {
-        for (int i = supplierList.getCount() - 1; i >= 0; i--) {
-            if (supplierAdapter.getSelectedIds().get(i)) {
-                supplierObjectArrayList.remove(i);
+        for (int i = productList.getCount() - 1; i >= 0; i--) {
+            if (productAdapter.getSelectedIds().get(i)) {
+                productObjectArrayList.remove(i);
             }
         }
         getActionMode().finish();
@@ -779,7 +861,7 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
                 "Delete",
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        deleteSupplier();
+                        deleteProduct();
                         dialog.dismiss();
                     }
                 });
@@ -795,21 +877,21 @@ public class SupplierDialog extends DialogFragment implements SearchView.OnQuery
         alert.show();
     }
 
-    @Override
-    public void editSupplier(SupplierObject object) {
-        showAddCustomerLayout(true);
+    public void editProduct(ProductObject object) {
+        this.productObject = object;
+        showAddProductLayout(true);
 
-        supplierID = object.getSupplier_id();
-        supplier.append(object.getName());
-        supplierAddress.append(object.getAddress());
-        supplierContact.append(object.getContact());
-        supplierEmail.append(object.getEmail());
-        supplierWebsite.append(object.getWebsite());
+        productID = object.getProduct_id();
+        product.append(object.getName());
+        productPrice.append(object.getPrice());
+        productDescription.append(object.getDescription());
+        productQuantity.append(object.getQuantity());
+
         isUpdate = true;
+        updateButton.setVisibility(View.VISIBLE);
     }
 
-
-    public interface SupplierDialogCallBack {
-        void selectedItem(SupplierObject object);
+    public interface ProductDialogCallBack {
+        void selectedProduct(DocumentObject object);
     }
 }

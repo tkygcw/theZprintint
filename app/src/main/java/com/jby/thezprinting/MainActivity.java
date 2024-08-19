@@ -2,6 +2,7 @@ package com.jby.thezprinting;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -14,43 +15,24 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 import com.jby.thezprinting.dialog.CustomerDialog;
 import com.jby.thezprinting.dialog.SortingDialog;
 import com.jby.thezprinting.dialog.SupplierDialog;
 import com.jby.thezprinting.document.DetailActivity;
 import com.jby.thezprinting.document.InvoiceFragment;
 import com.jby.thezprinting.document.QuotationFragment;
-import com.jby.thezprinting.shareObject.ApiDataObject;
-import com.jby.thezprinting.shareObject.ApiManager;
-import com.jby.thezprinting.shareObject.AsyncTaskManager;
 import com.jby.thezprinting.shareObject.NetworkConnection;
-import com.jby.thezprinting.sharePreference.SharedPreferenceManager;
-
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import static com.jby.thezprinting.shareObject.CustomToast.CustomToast;
 import static com.jby.thezprinting.shareObject.VariableUtils.REQUEST_UPDATE;
 
 public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener, SortingDialog.SortingDialogCallBack {
@@ -87,6 +69,12 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     }
 
     private void objectSetting() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(getResources().getColor(R.color.action_bar_color));
+        }
+
         navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         navView.setSelectedItemId(R.id.quotation);
         navView.setItemIconTintList(null);

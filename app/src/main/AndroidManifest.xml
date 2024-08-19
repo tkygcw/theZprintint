@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.jby.thezprinting">
 
     <application
@@ -12,18 +11,27 @@
         android:theme="@style/NoActionBar"
         android:usesCleartextTraffic="true">
 
-        <activity android:name=".HomeActivity" />
-        <activity android:name=".product.ProductActivity"></activity>
+        <activity
+            android:name=".HomeActivity"
+            android:configChanges="orientation|screenSize"
+            android:theme="@style/HomeActivityTheme" />
+
         <activity
             android:name=".document.DetailActivity"
+            android:configChanges="orientation|screenSize"
             android:windowSoftInputMode="adjustResize|stateHidden" />
+
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize"
             android:label="@string/app_name" />
 
         <activity
             android:name=".registration.LoginActivity"
-            android:label="@string/app_name">
+            android:configChanges="orientation|screenSize"
+            android:label="@string/app_name"
+            android:theme="@style/HomeActivityTheme">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.VIEW" />

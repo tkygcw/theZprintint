@@ -9,7 +9,7 @@ import android.content.SharedPreferences;
 
 public class SharedPreferenceManager {
 
-
+    private static String CompanyId = "company_id";
     private static String UserId = "user_id";
 
     private static SharedPreferences getSharedPreferences(Context context) {
@@ -21,6 +21,14 @@ public class SharedPreferenceManager {
         getSharedPreferences(context).edit().clear().apply();
     }
 
+    public static String getCompanyId(Context context) {
+        return getSharedPreferences(context).getString(CompanyId, "default");
+    }
+
+    public static void setCompanyId(Context context, String companyId) {
+        getSharedPreferences(context).edit().putString(CompanyId, companyId).apply();
+    }
+
     public static String getUserId(Context context) {
         return getSharedPreferences(context).getString(UserId, "default");
     }
@@ -28,5 +36,4 @@ public class SharedPreferenceManager {
     public static void setUserId(Context context, String userId) {
         getSharedPreferences(context).edit().putString(UserId, userId).apply();
     }
-
 }

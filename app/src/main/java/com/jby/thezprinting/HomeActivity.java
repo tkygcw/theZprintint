@@ -15,6 +15,8 @@ import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,9 +26,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import com.jby.thezprinting.dialog.CustomerDialog;
+import com.jby.thezprinting.dialog.ProductDialog;
 import com.jby.thezprinting.dialog.SupplierDialog;
-import com.jby.thezprinting.object.ProductObject;
-import com.jby.thezprinting.product.ProductActivity;
 import com.jby.thezprinting.registration.LoginActivity;
 import com.jby.thezprinting.shareObject.AnimationUtility;
 import com.jby.thezprinting.shareObject.ApiDataObject;
@@ -50,8 +51,8 @@ import static com.jby.thezprinting.shareObject.CustomToast.CustomToast;
 public class HomeActivity extends AppCompatActivity implements View.OnClickListener {
     private CardView documentLayout, productLayout, customerLayout, supplierLayout, signOutLayout;
     private AppBarLayout toolBarLayout;
-    private TextView pendingNumInvoice, completeNumInvoice, homeActivityVersion;
-    private TickerView pendingAmount, completeAmount;
+    private TextView homeActivityVersion;
+    private TickerView pendingNum, completeNum;
     private NestedScrollView nestedScrollView;
     //    asyncTask
     AsyncTaskManager asyncTaskManager;
@@ -77,10 +78,8 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         supplierLayout = findViewById(R.id.supplier_layout);
         signOutLayout = findViewById(R.id.log_out_layout);
 
-        pendingAmount = findViewById(R.id.activity_home_pending_balance);
-        pendingNumInvoice = findViewById(R.id.activity_home_num_pending_invoice);
-        completeAmount = findViewById(R.id.activity_home_complete_balance);
-        completeNumInvoice = findViewById(R.id.activity_home_num_complete_invoice);
+        pendingNum = findViewById(R.id.activity_home_pending_balance);
+        completeNum = findViewById(R.id.activity_home_complete_balance);
 
         toolBarLayout = findViewById(R.id.activity_home_tool_bar_layout);
         nestedScrollView = findViewById(R.id.activity_home_scroll_view);
@@ -88,6 +87,15 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void objectSetting() {
+        /*
+        * full screen
+        * */
+        Window window = getWindow();
+        WindowManager.LayoutParams winParams = window.getAttributes();
+        winParams.flags &= ~WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS;
+        window.setAttributes(winParams);
+        window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+
         documentLayout.setOnClickListener(this);
         productLayout.setOnClickListener(this);
         customerLayout.setOnClickListener(this);
@@ -118,7 +126,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 startActivity(new Intent(this, MainActivity.class));
                 break;
             case R.id.product_layout:
-                startActivity(new Intent(this, ProductActivity.class));
+                openProductDialog();
                 break;
             case R.id.customer_layout:
                 openCustomerDialog();
@@ -130,6 +138,16 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 logOutRequest();
                 break;
         }
+    }
+
+    private void openProductDialog() {
+        Bundle bundle = new Bundle();
+        bundle.putBoolean("isMainActivity", true);
+        bundle.putBoolean("isUpdateList", false);
+
+        DialogFragment dialogFragment = new ProductDialog();
+        dialogFragment.setArguments(bundle);
+        dialogFragment.show(getSupportFragmentManager(), "");
     }
 
     private void openCustomerDialog() {
@@ -209,6 +227,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
             public void run() {
                 apiDataObjectArrayList = new ArrayList<>();
                 apiDataObjectArrayList.add(new ApiDataObject("read", "1"));
+                apiDataObjectArrayList.add(new ApiDataObject("company_id", SharedPreferenceManager.getCompanyId(getApplicationContext())));
 
                 asyncTaskManager = new AsyncTaskManager(
                         getApplicationContext(),
@@ -236,15 +255,12 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                                             JSONArray jsonArray = jsonObjectLoginResponse.getJSONArray("invoice_detail");
                                             for(int i = 0 ; i < jsonArray.length(); i++){
                                                 if(jsonArray.getJSONObject(i).getString("status").equals("1")){
-                                                    completeAmount.setText(jsonArray.getJSONObject(i).getString("total_amount"));
-                                                    completeNumInvoice.setText(String.format("%s Complete Invoices", jsonArray.getJSONObject(i).getString("num_invoice")));
+                                                    completeNum.setText(jsonArray.getJSONObject(i).getString("num_invoice"));
                                                 }
                                                 else{
-                                                    pendingAmount.setText(jsonArray.getJSONObject(i).getString("total_amount"));
-                                                    pendingNumInvoice.setText(String.format("%s Pending Invoices", jsonArray.getJSONObject(i).getString("num_invoice")));
+                                                    pendingNum.setText(jsonArray.getJSONObject(i).getString("num_invoice"));
                                                 }
                                             }
-
                                         } catch (JSONException e) {
                                             e.printStackTrace();
                                         }
@@ -309,6 +325,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
             public void run() {
                 ArrayList<ApiDataObject> apiDataObjectArrayList = new ArrayList<>();
                 apiDataObjectArrayList.add(new ApiDataObject("user_id", SharedPreferenceManager.getUserId(getApplicationContext())));
+                apiDataObjectArrayList.add(new ApiDataObject("company_id", SharedPreferenceManager.getCompanyId(getApplicationContext())));
                 apiDataObjectArrayList.add(new ApiDataObject("token", token));
                 AsyncTaskManager asyncTaskManager = new AsyncTaskManager(
                         getApplicationContext(),

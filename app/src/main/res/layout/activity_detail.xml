@@ -115,9 +115,9 @@
                             android:layout_height="match_parent"
                             android:layout_weight="5"
                             android:ellipsize="end"
-                            android:padding="10dp"
                             android:gravity="center|start"
                             android:maxLines="1"
+                            android:padding="10dp"
                             android:text="Please Select Customer"
                             android:textColor="@color/grey"
                             android:textSize="17sp" />
@@ -353,8 +353,8 @@
                                 android:layout_marginTop="30dp"
                                 android:layout_marginEnd="5dp"
                                 android:layout_marginBottom="5dp"
-                                android:background="@drawable/custom_deposit_button"
                                 android:layout_toStartOf="@id/add_button"
+                                android:background="@drawable/custom_deposit_button"
                                 android:elevation="10dp"
                                 android:text="Deposit"
                                 android:textColor="@color/white"
@@ -376,27 +376,138 @@
 
                         </RelativeLayout>
 
+                        <Button
+                            android:id="@+id/action_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="20dp"
+                            android:layout_marginTop="40dp"
+                            android:layout_marginEnd="20dp"
+                            android:layout_marginBottom="20dp"
+                            android:background="@drawable/custom_orange_button"
+                            android:elevation="5dp"
+                            android:text="Create Quotation"
+                            android:textColor="@color/white" />
+
                     </LinearLayout>
 
                 </android.support.v7.widget.CardView>
 
             </RelativeLayout>
 
-        </LinearLayout>
+            <TextView
+                android:id="@+id/subscription_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@string/font_family_condensed"
+                android:text="Subscription Details:"
+                android:textColor="@color/grey"
+                android:visibility="gone"
+                android:layout_marginTop="10dp"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/action_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/content_layout"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="40dp"
-            android:layout_marginEnd="20dp"
-            android:layout_marginBottom="20dp"
-            android:background="@drawable/custom_orange_button"
-            android:elevation="5dp"
-            android:text="Create Quotation"
-            android:textColor="@color/white" />
+            <android.support.v7.widget.CardView
+                android:id="@+id/subscription_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="10dp"
+                android:visibility="gone"
+                android:background="@color/white"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <Spinner
+                            android:id="@+id/service_type"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:padding="5dp" />
+
+                        <EditText
+                            android:id="@+id/service_name"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:hint="Domain Name"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/orange"
+                            android:gravity="start|top"
+                            android:padding="5dp" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="?actionBarSize"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <EditText
+                            android:id="@+id/service_fee"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:hint="Fee (RM)"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/orange"
+                            android:gravity="start|top"
+                            android:inputType="numberDecimal"
+                            android:padding="5dp" />
+
+                        <EditText
+                            android:id="@+id/service_duration"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/orange"
+                            android:gravity="start|top"
+                            android:hint="Duration Month"
+                            android:padding="5dp" />
+
+                    </LinearLayout>
+
+                    <EditText
+                        android:id="@+id/service_description"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/orange"
+                        android:gravity="start|top"
+                        android:textSize="13sp"
+                        android:padding="13sp"
+                        android:minHeight="?actionBarSize"
+                        android:hint="Special Remark" />
+
+                    <Button
+                        android:id="@+id/subscription_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="20dp"
+                        android:layout_marginTop="40dp"
+                        android:layout_marginEnd="20dp"
+                        android:layout_marginBottom="20dp"
+                        android:background="@drawable/custom_orange_button"
+                        android:elevation="5dp"
+                        android:text="Update Subscription"
+                        android:textColor="@color/white" />
+
+                </LinearLayout>
+
+            </android.support.v7.widget.CardView>
+
+        </LinearLayout>
 
         <include
             layout="@layout/progress_bar"

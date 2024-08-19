@@ -8,11 +8,13 @@ import java.util.ArrayList;
 
 public class ApiManager {
 
-    private static String domain = "http://www.chafor.net/";
-//    private static String domain = "https://www.mahsing-ent.com/";
+//    private static String domain = "http://www.chafor.net/";
+    //private static String domain = "https://www.mahsing-ent.com/";
+    private static String domain = "https://www.channelsoft.com.my/";
     private static String prefix = "thez_printing/";
 
     public String home = domain + prefix + "home/home.php";
+    public String company = domain + prefix + "company/company.php";
     public String quotation = domain + prefix + "quotation/quotation.php";
     public String invoice = domain + prefix + "invoice/invoice.php";
     public String registration = domain + prefix + "registration/registration.php";
@@ -20,6 +22,7 @@ public class ApiManager {
     public String supplier = domain + prefix + "supplier/supplier.php";
     public String product = domain + prefix + "product/product.php";
     public String notification = domain + prefix + "notification/notification.php";
+    public String subscription = domain + "admin/subscription/merchant/index.php";
 
     public String setData(ArrayList<ApiDataObject> apiDataObjectArrayList) {
         StringBuilder apiDataPost = new StringBuilder();

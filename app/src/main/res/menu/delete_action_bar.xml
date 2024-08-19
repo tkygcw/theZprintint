@@ -5,7 +5,7 @@
     <item
         android:id="@+id/select_all"
         android:title="Select All"
-        app:showAsAction="ifRoom"/>
+        app:showAsAction="never"/>
 
     <item
         android:id="@+id/delete"

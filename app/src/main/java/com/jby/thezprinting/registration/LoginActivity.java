@@ -11,7 +11,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -22,12 +26,18 @@ import android.widget.Toast;
 import com.facebook.stetho.Stetho;
 import com.jby.thezprinting.HomeActivity;
 import com.jby.thezprinting.R;
+import com.jby.thezprinting.adapter.UserAdapter;
+import com.jby.thezprinting.database.CustomSqliteHelper;
+import com.jby.thezprinting.database.FrameworkClass;
+import com.jby.thezprinting.database.ResultCallBack;
+import com.jby.thezprinting.object.UserObject;
 import com.jby.thezprinting.shareObject.ApiDataObject;
 import com.jby.thezprinting.shareObject.ApiManager;
 import com.jby.thezprinting.shareObject.AsyncTaskManager;
 import com.jby.thezprinting.shareObject.NetworkConnection;
 import com.jby.thezprinting.sharePreference.SharedPreferenceManager;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -36,8 +46,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
-    private EditText loginActivityUsername, loginActivityPassword;
+import static com.jby.thezprinting.database.CustomSqliteHelper.TB_USER;
+
+public class LoginActivity extends AppCompatActivity implements View.OnClickListener, ResultCallBack, AdapterView.OnItemClickListener {
+    private AutoCompleteTextView loginActivityAutoUsername;
+    private EditText loginActivityPassword;
     private TextView loginActivityForgotPassword, loginActivityVersion;
     private ImageView loginActivityShowPassword, loginActivityCancelUsername;
     private LinearLayout loginActivityMainLayout;
@@ -49,6 +62,12 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     ArrayList<ApiDataObject> apiDataObjectArrayList;
     private Handler handler;
 
+    private ArrayList<UserObject> userObjectArrayList;
+    private UserAdapter userAdapter;
+
+    private FrameworkClass frameworkClass;
+    private String readType;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,27 +78,43 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void objectInitialize() {
+        loginActivityAutoUsername = findViewById(R.id.activity_login_auto_complete_username);
+        loginActivityPassword = findViewById(R.id.activity_login_password);
 
-        loginActivityUsername = (EditText) findViewById(R.id.activity_login_username);
-        loginActivityPassword = (EditText) findViewById(R.id.activity_login_password);
-
-        loginActivityForgotPassword = (TextView) findViewById(R.id.activity_login_forgot_password);
+        loginActivityForgotPassword = findViewById(R.id.activity_login_forgot_password);
         loginActivityVersion = findViewById(R.id.activity_login_version_name);
 
-        loginActivityShowPassword = (ImageView) findViewById(R.id.activity_login_show_password);
-        loginActivityCancelUsername = (ImageView) findViewById(R.id.activity_login_cancel_username);
+        loginActivityShowPassword = findViewById(R.id.activity_login_show_password);
+        loginActivityCancelUsername = findViewById(R.id.activity_login_cancel_username);
 
-        loginActivityMainLayout = (LinearLayout) findViewById(R.id.activity_login_parent_layout);
-        loginActivityProgressBar = (ProgressBar) findViewById(R.id.login_activity_progress_bar);
+        loginActivityMainLayout = findViewById(R.id.activity_login_parent_layout);
+        loginActivityProgressBar = findViewById(R.id.login_activity_progress_bar);
 
+        userObjectArrayList = new ArrayList<>();
+
+        frameworkClass = new FrameworkClass(this, this, new CustomSqliteHelper(this), TB_USER);
         handler = new Handler();
 
     }
 
     private void objectSetting() {
+        /*
+         * full screen
+         * */
+        Window window = getWindow();
+        WindowManager.LayoutParams winParams = window.getAttributes();
+        winParams.flags &= ~WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS;
+        window.setAttributes(winParams);
+        window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+
         loginActivityShowPassword.setOnClickListener(this);
         loginActivityCancelUsername.setOnClickListener(this);
+        loginActivityAutoUsername.setOnItemClickListener(this);
         displayVersion();
+        /*
+         * for auto complete purpose
+         * */
+        readUser();
     }
 
     @Override
@@ -89,7 +124,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 showPasswordSetting();
                 break;
             case R.id.activity_login_cancel_username:
-                loginActivityUsername.setText("");
+                loginActivityAutoUsername.setText("");
                 break;
         }
     }
@@ -110,7 +145,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     //    sign in setting
     public void checking(View v) {
         loginActivityProgressBar.setVisibility(View.VISIBLE);
-        final String username = loginActivityUsername.getText().toString().trim();
+        final String username = loginActivityAutoUsername.getText().toString().trim();
         final String password = loginActivityPassword.getText().toString().trim();
         closeKeyBoard();
 
@@ -204,8 +239,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     public void whenLoginSuccessful(JSONObject jsonObject) {
         try {
-            String userID = jsonObject.getString("user_id");
-            SharedPreferenceManager.setUserId(this, userID);
+            checkLocalUserAvailability(jsonObject);
+            SharedPreferenceManager.setCompanyId(this, jsonObject.getString("company_id"));
+            SharedPreferenceManager.setUserId(this, jsonObject.getString("user_id"));
             //intent
             startActivity(new Intent(this, HomeActivity.class));
             finish();
@@ -217,7 +253,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     private void isLogin() {
         Stetho.initializeWithDefaults(this);
-        if (!SharedPreferenceManager.getUserId(this).equals("default")) {
+        if (!SharedPreferenceManager.getCompanyId(this).equals("default") && !SharedPreferenceManager.getUserId(this).equals("default")) {
             startActivity(new Intent(this, HomeActivity.class));
             finish();
         }
@@ -233,4 +269,84 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         }
     }
 
+    //---------------------------------------------------------------------local user account purpose-------------------------------------------------------------------------
+    @Override
+    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+        loginActivityPassword.setText(userObjectArrayList.get(i).getPassword());
+    }
+
+    private void readUser() {
+        frameworkClass.new Read("*").perform();
+    }
+
+    /*
+     * check user
+     * */
+    private void checkLocalUserAvailability(JSONObject jsonObject) throws JSONException {
+        int count = frameworkClass.new Read("username").where("username = '" + loginActivityAutoUsername.getText().toString() + "'").count();
+        /*
+         * update user if existed
+         * */
+        if (count > 0) {
+            frameworkClass.new Update("username, company, logo, password",
+                    jsonObject.getString("username") + "," +
+                            jsonObject.getString("company") + "," +
+                            jsonObject.getString("logo") + "," +
+                            loginActivityPassword.getText().toString())
+                    .where("username = ?", loginActivityAutoUsername.getText().toString())
+                    .perform();
+        }
+        /*
+         * create new user
+         * */
+        else {
+            storeUserDetail(jsonObject);
+        }
+    }
+
+    private void storeUserDetail(JSONObject jsonObject) throws JSONException {
+        frameworkClass.new create("username, company, logo, password",
+                new String[]{
+                        jsonObject.getString("username"),
+                        jsonObject.getString("company"),
+                        jsonObject.getString("logo"),
+                        loginActivityPassword.getText().toString()
+                }).perform();
+    }
+
+
+    @Override
+    public void createResult(String status) {
+    }
+
+    @Override
+    public void readResult(String result) {
+        try {
+            JSONArray jsonArray = new JSONObject(result).getJSONArray("result");
+            for (int i = 0; i < jsonArray.length(); i++) {
+                userObjectArrayList.add(new UserObject(
+                                jsonArray.getJSONObject(i).getString("username"),
+                                jsonArray.getJSONObject(i).getString("password"),
+                                jsonArray.getJSONObject(i).getString("company"),
+                                jsonArray.getJSONObject(i).getString("logo")
+                        )
+                );
+            }
+            loginActivityAutoUsername.setThreshold(1);
+            userAdapter = new UserAdapter(this, R.layout.user_list_view_item, userObjectArrayList);
+            loginActivityAutoUsername.setAdapter(userAdapter);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void updateResult(String status) {
+
+    }
+
+    @Override
+    public void deleteResult(String status) {
+
+    }
 }

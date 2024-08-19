@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/transparent_black"
+    android:orientation="vertical">
+
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="20dp"
+        android:background="@color/white"
+        android:orientation="vertical"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="10dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <android.support.v7.widget.SearchView
+                android:id="@+id/product_dialog_search"
+                android:layout_width="match_parent"
+                android:layout_height="?actionBarSize" />
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/display_product_layout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+
+                        <TextView
+                            android:id="@+id/product_dialog_label_recent_choose"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="Recent Choose"
+                            android:textColor="@color/grey"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <com.jby.thezprinting.others.ExpandableHeightListView
+                            android:id="@+id/product_dialog_favourite_product_list"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:divider="@color/line_black"
+                            android:dividerHeight="1dp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="All Product"
+                            android:textColor="@color/grey"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/add_new_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginTop="20dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/custom_orange_button"
+                            android:elevation="10dp"
+                            android:stateListAnimator="@null"
+                            android:text="Add New Product"
+                            android:textColor="@color/white" />
+
+                        <LinearLayout
+                            android:id="@+id/product_not_found_layout"
+                            android:layout_width="match_parent"
+                            android:layout_height="200dp">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:gravity="center"
+                                android:padding="5dp"
+                                android:text="No Product is Found"
+                                android:textColor="@color/line_black"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                        </LinearLayout>
+
+
+                        <com.jby.thezprinting.others.ExpandableHeightListView
+                            android:id="@+id/product_dialog_product_list"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:divider="@color/line_black"
+                            android:dividerHeight="1dp" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/add_product_layout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@string/font_family_condensed"
+                            android:padding="10dp"
+                            android:text="Product"
+                            android:textColor="@color/transparent_black"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:id="@+id/item"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/orange"
+                            android:gravity="start|top"
+                            android:minHeight="?actionBarSize"
+                            android:padding="10dp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@string/font_family_condensed"
+                            android:padding="10dp"
+                            android:text="Description"
+                            android:textColor="@color/transparent_black"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:id="@+id/itemDescription"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/orange"
+                            android:gravity="start|top"
+                            android:hint="Item description"
+                            android:minHeight="?actionBarSize"
+                            android:padding="10dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:id="@+id/layout_quantity"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/label_quantity"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@string/font_family_condensed"
+                                    android:padding="10dp"
+                                    android:text="Quantity"
+                                    android:textColor="@color/transparent_black"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+
+                                <EditText
+                                    android:id="@+id/quantity"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="?actionBarSize"
+                                    android:backgroundTint="@color/orange"
+                                    android:inputType="numberDecimal"
+                                    android:padding="10dp" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@string/font_family_condensed"
+                                    android:padding="10dp"
+                                    android:text="Price (RM)"
+                                    android:textColor="@color/transparent_black"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+
+                                <EditText
+                                    android:id="@+id/price"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="?actionBarSize"
+                                    android:backgroundTint="@color/orange"
+                                    android:imeOptions="actionSend"
+                                    android:inputType="numberDecimal"
+                                    android:padding="10dp" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/update_button"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_marginTop="20dp"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/custom_orange_button"
+                                android:elevation="10dp"
+                                android:stateListAnimator="@null"
+                                android:text="@string/update_button"
+                                android:textColor="@color/white" />
+
+                            <Button
+                                android:id="@+id/add_button"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_marginTop="20dp"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/custom_grey_button"
+                                android:elevation="10dp"
+                                android:stateListAnimator="@null"
+                                android:text="Add Item"
+                                android:visibility="gone"
+                                android:textColor="@color/white" />
+
+                        </LinearLayout>
+
+                        <Button
+                            android:id="@+id/back_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginTop="20dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/custom_red_button"
+                            android:elevation="10dp"
+                            android:stateListAnimator="@null"
+                            android:text="Back"
+                            android:textColor="@color/white" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </ScrollView>
+
+        </LinearLayout>
+
+    </android.support.v7.widget.CardView>
+
+</LinearLayout>

@@ -20,6 +20,16 @@
         <item name="actionButtonStyle">@style/myActionButtonStyle</item>
     </style>
 
+    <!-- Base application theme. -->
+    <style name="HomeActivityTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="colorPrimaryDark">@color/background</item>
+        <item name="android:actionButtonStyle">@style/myActionButtonStyle</item>
+        <item name="actionButtonStyle">@style/myActionButtonStyle</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">true</item>
+    </style>
+
     <style name="dialog_up_down">
         <item name="android:windowEnterAnimation">@anim/slide_in_down</item>
         <item name="android:windowExitAnimation">@anim/slide_out_up</item>

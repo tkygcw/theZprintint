@@ -38,6 +38,7 @@ import com.jby.thezprinting.others.SwipeDismissTouchListener;
 import com.jby.thezprinting.shareObject.ApiDataObject;
 import com.jby.thezprinting.shareObject.ApiManager;
 import com.jby.thezprinting.shareObject.AsyncTaskManager;
+import com.jby.thezprinting.sharePreference.SharedPreferenceManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -106,7 +107,6 @@ public class CustomerDialog extends DialogFragment implements SearchView.OnQuery
     /*
      * activity control purpose
      * */
-
     public CustomerDialogCallBack customerDialogCallBack;
 
     public CustomerDialog() {
@@ -189,7 +189,7 @@ public class CustomerDialog extends DialogFragment implements SearchView.OnQuery
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                frameworkClass.new Read("*").orderByDesc("customer_id").perform();
+                frameworkClass.new Read("*").where("company_id = " + SharedPreferenceManager.getCompanyId(getActivity())).orderByDesc("customer_id").perform();
                 fetchCustomer(query);
             }
         }, 200);
@@ -207,6 +207,7 @@ public class CustomerDialog extends DialogFragment implements SearchView.OnQuery
                 apiDataObjectArrayList = new ArrayList<>();
                 apiDataObjectArrayList.add(new ApiDataObject("read", "1"));
                 apiDataObjectArrayList.add(new ApiDataObject("query", query));
+                apiDataObjectArrayList.add(new ApiDataObject("company_id", SharedPreferenceManager.getCompanyId(getActivity())));
                 asyncTaskManager = new AsyncTaskManager(
                         getActivity(),
                         new ApiManager().customer,
@@ -259,12 +260,16 @@ public class CustomerDialog extends DialogFragment implements SearchView.OnQuery
     }
 
     private void notifyDataSetChanged() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                customerAdapter.notifyDataSetChanged();
-            }
-        });
+        try {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    customerAdapter.notifyDataSetChanged();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void setUpVisibility() {
@@ -356,12 +361,13 @@ public class CustomerDialog extends DialogFragment implements SearchView.OnQuery
                 /*
                  * store value into favourite list
                  * */
-                frameworkClass.new create("customer_id, name, address, contact",
+                frameworkClass.new create("customer_id, name, address, contact, company_id",
                         new String[]{
                                 favouriteCustomerArrayList.get(i).getCustomerID(),
                                 favouriteCustomerArrayList.get(i).getName(),
                                 favouriteCustomerArrayList.get(i).getAddress(),
                                 favouriteCustomerArrayList.get(i).getContact(),
+                                SharedPreferenceManager.getCompanyId(getActivity())
                         }).perform();
                 break;
             case R.id.customer_dialog_customer_list:
@@ -369,12 +375,13 @@ public class CustomerDialog extends DialogFragment implements SearchView.OnQuery
                 /*
                  * store value into favourite list
                  * */
-                frameworkClass.new create("customer_id, name, address, contact",
+                frameworkClass.new create("customer_id, name, address, contact, company_id",
                         new String[]{
                                 customerObjectArrayList.get(i).getCustomerID(),
                                 customerObjectArrayList.get(i).getName(),
                                 customerObjectArrayList.get(i).getAddress(),
                                 customerObjectArrayList.get(i).getContact(),
+                                SharedPreferenceManager.getCompanyId(getActivity())
                         }).perform();
                 break;
         }
@@ -492,6 +499,7 @@ public class CustomerDialog extends DialogFragment implements SearchView.OnQuery
                 apiDataObjectArrayList.add(new ApiDataObject("name", customer.getText().toString()));
                 apiDataObjectArrayList.add(new ApiDataObject("address", customerAddress.getText().toString()));
                 apiDataObjectArrayList.add(new ApiDataObject("contact", customerContact.getText().toString()));
+                apiDataObjectArrayList.add(new ApiDataObject("company_id", SharedPreferenceManager.getCompanyId(getActivity())));
 
                 asyncTaskManager = new AsyncTaskManager(
                         getActivity(),
